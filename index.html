@@ -2584,7 +2584,7 @@
         <div class="api-settings" aria-label="OpenAI-compatible API settings">
           <div class="api-settings-title">
             <b>OpenAI-compatible API</b>
-            <span>No token is embedded in this file.</span>
+            <span>Defaults to OpenRouter. Override any field.</span>
           </div>
           <div class="api-grid">
             <label class="api-field full">
@@ -3414,7 +3414,9 @@
       requestAnimationFrame(initScratchCards);
     });
 
-    const DEFAULT_API_ENDPOINT = "https://api.openai.com/v1/chat/completions";
+    const DEFAULT_API_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
+    const DEFAULT_API_MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free";
+    const DEFAULT_API_KEY = "__OPENROUTER_API_KEY__";
     const LLM_TEMPERATURE = 1;
     const LLM_SYSTEM_PROMPT = `Evaluate a user's rough prompt and produce a revised high-accuracy prompt.
 
@@ -3579,6 +3581,8 @@ Keep the complete composed prompt under 180 words.`;
     let modalHasEvaluation = false;
 
     apiEndpointInput.value = DEFAULT_API_ENDPOINT;
+    if (DEFAULT_API_MODEL) apiModelInput.value = DEFAULT_API_MODEL;
+    if (DEFAULT_API_KEY && !DEFAULT_API_KEY.startsWith("__")) apiTokenInput.value = DEFAULT_API_KEY;
 
     function makePromptState(key) {
       const sample = promptSamples[key] || promptSamples.patch;
@@ -3909,8 +3913,8 @@ Keep the complete composed prompt under 180 words.`;
 
     function getApiConfig() {
       const endpoint = normalizeChatCompletionsEndpoint(apiEndpointInput.value || DEFAULT_API_ENDPOINT);
-      const model = apiModelInput.value.trim();
-      const token = apiTokenInput.value.trim();
+      const model = apiModelInput.value.trim() || DEFAULT_API_MODEL;
+      const token = apiTokenInput.value.trim() || (DEFAULT_API_KEY.startsWith("__") ? "" : DEFAULT_API_KEY);
 
       if (!model) {
         throw new Error("Model name missing");
@@ -3932,7 +3936,9 @@ Keep the complete composed prompt under 180 words.`;
           signal,
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiConfig.token}`
+            "Authorization": `Bearer ${apiConfig.token}`,
+            "HTTP-Referer": location.origin,
+            "X-Title": "Better Prompting Through Analogy"
           },
           body: JSON.stringify({
             model: apiConfig.model,
