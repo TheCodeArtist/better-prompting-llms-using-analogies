@@ -1,8 +1,12 @@
 # Better Prompting LLMs Using Analogies
 
-An interactive visual presentation that teaches practical LLM prompting techniques through analogy, mini-games, and live prompt building.
+Learn practical LLM prompting techniques through mini-games, and live prompt building.
 
 **Live demo:** https://thecodeartist.github.io/better-prompting-llms-using-analogies/
+
+![Results comparison](Screenshot-results.png)
+![Prompt evaluation 1](Screenshot-prompt-evaluation-1.png)
+![Prompt evaluation 2](Screenshot-prompt-evaluation-2.png)
 
 ---
 
