@@ -2597,7 +2597,7 @@
             </label>
             <label class="api-field">
               API token
-              <input id="apiTokenInput" type="password" autocomplete="new-password" spellcheck="false" placeholder="provider token">
+              <input id="apiTokenInput" type="text" autocomplete="off" spellcheck="false" placeholder="provider token">
             </label>
           </div>
           <div class="api-note" id="apiSettingsStatus">Requests are sent from this browser; the endpoint must allow browser access.</div>
@@ -3580,9 +3580,51 @@ Keep the complete composed prompt under 180 words.`;
     let evaluationPhraseTimer = null;
     let modalHasEvaluation = false;
 
-    apiEndpointInput.value = DEFAULT_API_ENDPOINT;
-    if (DEFAULT_API_MODEL) apiModelInput.value = DEFAULT_API_MODEL;
-    if (DEFAULT_API_KEY && !DEFAULT_API_KEY.startsWith("__")) apiTokenInput.value = DEFAULT_API_KEY;
+    (function initTokenMask(el) {
+      const nativeDesc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+      let real = '';
+      function setDisplay(v) { nativeDesc.set.call(el, '•'.repeat(v.length)); }
+      Object.defineProperty(el, 'value', {
+        get() { return real; },
+        set(v) { real = String(v ?? ''); setDisplay(real); },
+        configurable: true,
+      });
+      el.addEventListener('beforeinput', e => {
+        e.preventDefault();
+        const s = el.selectionStart ?? real.length;
+        const end = el.selectionEnd ?? real.length;
+        if (e.inputType === 'insertText' && e.data != null) {
+          real = real.slice(0, s) + e.data + real.slice(end);
+          setDisplay(real); el.setSelectionRange(s + e.data.length, s + e.data.length);
+        } else if (e.inputType === 'deleteContentBackward') {
+          if (s !== end) { real = real.slice(0, s) + real.slice(end); setDisplay(real); el.setSelectionRange(s, s); }
+          else if (s > 0) { real = real.slice(0, s - 1) + real.slice(s); setDisplay(real); el.setSelectionRange(s - 1, s - 1); }
+        } else if (e.inputType === 'deleteContentForward') {
+          if (s !== end) { real = real.slice(0, s) + real.slice(end); setDisplay(real); el.setSelectionRange(s, s); }
+          else if (s < real.length) { real = real.slice(0, s) + real.slice(s + 1); setDisplay(real); el.setSelectionRange(s, s); }
+        } else if (e.inputType === 'deleteWordBackward') {
+          const trimmed = real.slice(0, s).replace(/\S+\s*$/, '');
+          real = trimmed + real.slice(end); setDisplay(real); el.setSelectionRange(trimmed.length, trimmed.length);
+        } else if (e.inputType === 'deleteWordForward') {
+          const trimmed = real.slice(end).replace(/^\s*\S+/, '');
+          real = real.slice(0, s) + trimmed; setDisplay(real); el.setSelectionRange(s, s);
+        }
+      });
+      el.addEventListener('paste', e => {
+        e.preventDefault();
+        const s = el.selectionStart ?? real.length, end = el.selectionEnd ?? real.length;
+        const text = (e.clipboardData || window.clipboardData).getData('text') || '';
+        if (!text) return;
+        real = real.slice(0, s) + text + real.slice(end);
+        setDisplay(real); el.setSelectionRange(s + text.length, s + text.length);
+      });
+      el.addEventListener('drop', e => {
+        e.preventDefault();
+        const text = e.dataTransfer?.getData('text') || '';
+        if (!text) return;
+        real = text; setDisplay(real); el.setSelectionRange(real.length, real.length);
+      });
+    }(apiTokenInput));
 
     function makePromptState(key) {
       const sample = promptSamples[key] || promptSamples.patch;
@@ -3912,9 +3954,13 @@ Keep the complete composed prompt under 180 words.`;
     }
 
     function getApiConfig() {
-      const endpoint = normalizeChatCompletionsEndpoint(apiEndpointInput.value || DEFAULT_API_ENDPOINT);
-      const model = apiModelInput.value.trim() || DEFAULT_API_MODEL;
-      const token = apiTokenInput.value.trim() || (DEFAULT_API_KEY.startsWith("__") ? "" : DEFAULT_API_KEY);
+      const endpointRaw = apiEndpointInput.value.trim();
+      const modelRaw = apiModelInput.value.trim();
+      const tokenRaw = apiTokenInput.value.trim();
+      const useDefaults = !endpointRaw && !modelRaw && !tokenRaw;
+      const endpoint = normalizeChatCompletionsEndpoint(useDefaults ? DEFAULT_API_ENDPOINT : endpointRaw);
+      const model = useDefaults ? DEFAULT_API_MODEL : modelRaw;
+      const token = useDefaults ? (DEFAULT_API_KEY.startsWith("__") ? "" : DEFAULT_API_KEY) : tokenRaw;
 
       if (!model) {
         throw new Error("Model name missing");
