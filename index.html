@@ -1,0 +1,4192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Better Prompting LLMs Through Analogy</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #617081;
+      --line: #d9e0e8;
+      --paper: #f7f9fb;
+      --panel: #ffffff;
+      --blue: #276ef1;
+      --green: #0a8f5a;
+      --red: #c93434;
+      --amber: #d28a00;
+      --violet: #6941c6;
+      --belt: #2f3b46;
+      --belt-edge: #111820;
+      --shadow: 0 16px 40px rgba(23, 32, 42, 0.12);
+      --coin-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g' cx='34%25' cy='26%25' r='70%25'%3E%3Cstop offset='0' stop-color='%23eef2f7'/%3E%3Cstop offset='0.35' stop-color='%23d5dbe4'/%3E%3Cstop offset='0.72' stop-color='%239aa4b2'/%3E%3Cstop offset='1' stop-color='%236b7280'/%3E%3C/radialGradient%3E%3ClinearGradient id='rim' x1='10' y1='8' x2='54' y2='56'%3E%3Cstop offset='0' stop-color='%23c8d0dc'/%3E%3Cstop offset='1' stop-color='%236a7282'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='29' fill='url(%23rim)'/%3E%3Ccircle cx='32' cy='32' r='24' fill='url(%23g)' stroke='%238e98a8' stroke-width='2'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%237e8796' stroke-width='2' stroke-dasharray='3 3'/%3E%3Ctext x='32' y='38' text-anchor='middle' font-family='Arial,sans-serif' font-size='19' font-weight='900' fill='%23122033'%3ELLM%3C/text%3E%3C/svg%3E") 32 32, auto;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.88), rgba(247,249,251,0.98)),
+        linear-gradient(90deg, rgba(39,110,241,0.06), transparent 34%, rgba(10,143,90,0.05) 72%, transparent),
+        var(--paper);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .deck {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px clamp(16px, 3vw, 34px);
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,0.86);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      font-weight: 760;
+      letter-spacing: 0;
+      color: #142235;
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #142235;
+      color: #fff;
+      font-weight: 820;
+      flex: 0 0 auto;
+    }
+
+    .progress-wrap {
+      min-width: 160px;
+      max-width: 360px;
+      flex: 1;
+      height: 8px;
+      border-radius: 8px;
+      background: #e7edf4;
+      overflow: hidden;
+    }
+
+    .progress {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--blue), var(--green));
+      transition: width 220ms ease;
+    }
+
+    .slide-count {
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .slides {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slide {
+      display: none;
+      min-height: calc(100vh - 137px);
+      padding: clamp(30px, 5vh, 72px) clamp(40px, 6vw, 116px);
+    }
+
+    .slide.active {
+      display: block;
+    }
+
+    .slide-inner {
+      width: min(1800px, 100%);
+      margin: 0 auto;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(760px, 1.3fr) minmax(480px, 0.7fr);
+      gap: clamp(44px, 6vw, 112px);
+      align-items: center;
+    }
+
+    .hero-wide {
+      min-height: min(720px, 72vh);
+      display: grid;
+      align-content: center;
+    }
+
+    .hero-wide h1 {
+      max-width: 1220px;
+    }
+
+    .hero-wide .lead {
+      max-width: 1120px;
+    }
+
+    .eyebrow {
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 820;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      letter-spacing: 0;
+      margin: 0;
+      line-height: 1.05;
+      color: #122033;
+    }
+
+    h1 {
+      font-size: clamp(54px, 4.7vw, 96px);
+      max-width: 1080px;
+    }
+
+    h2 {
+      font-size: clamp(38px, 4.2vw, 74px);
+      max-width: 1160px;
+    }
+
+    h3 {
+      font-size: clamp(20px, 2.4vw, 30px);
+    }
+
+    p {
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: clamp(16px, 1.7vw, 20px);
+      margin: 18px 0 0;
+    }
+
+    .lead {
+      max-width: 980px;
+      color: #415166;
+      font-size: clamp(19px, 1.7vw, 30px);
+    }
+
+    .metric-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 38px;
+    }
+
+    .metric {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.72);
+      min-height: 156px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: clamp(22px, 1.8vw, 32px);
+      color: #142235;
+      margin-bottom: 8px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .model-band {
+      margin-top: 34px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      background: rgba(255,255,255,0.52);
+    }
+
+    .model-step {
+      padding: 22px;
+      border-right: 1px solid var(--line);
+      min-height: 160px;
+    }
+
+    .model-step:last-child {
+      border-right: 0;
+    }
+
+    .model-step .num {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: #142235;
+      font-weight: 820;
+      margin-bottom: 18px;
+    }
+
+    .model-step b {
+      display: block;
+      font-size: 19px;
+      margin-bottom: 8px;
+    }
+
+    .model-step span {
+      display: block;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .game-layout {
+      display: grid;
+      grid-template-columns: minmax(420px, 0.76fr) minmax(620px, 1.24fr);
+      gap: clamp(36px, 5vw, 88px);
+      align-items: stretch;
+    }
+
+    .game-copy {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .rule-list {
+      display: grid;
+      gap: 12px;
+      margin: 26px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .rule-list li {
+      border-left: 4px solid var(--blue);
+      background: rgba(255,255,255,0.70);
+      padding: 12px 14px;
+      border-radius: 0 8px 8px 0;
+      color: #405066;
+      line-height: 1.45;
+    }
+
+    .game-shell {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      min-width: 0;
+    }
+
+    .game-top {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .stat {
+      border: 1px solid #e1e7ee;
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 64px;
+      background: #f8fafc;
+    }
+
+    .stat small {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .stat b {
+      display: block;
+      font-size: 18px;
+      color: #142235;
+      overflow-wrap: anywhere;
+    }
+
+    .game-stage {
+      position: relative;
+      overflow: hidden;
+      height: min(66vh, 680px);
+      min-height: 520px;
+      border-radius: 8px;
+      border: 1px solid #26313d;
+      background:
+        linear-gradient(90deg, transparent 0 28%, rgba(255,255,255,0.08) 28% 30%, transparent 30% 70%, rgba(255,255,255,0.08) 70% 72%, transparent 72%),
+        linear-gradient(180deg, #40505f, #1e2933);
+      color: #fff;
+    }
+
+    .belt {
+      position: absolute;
+      inset: 0 28%;
+      background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.12) 0 18px, transparent 18px 64px),
+        linear-gradient(90deg, var(--belt-edge), var(--belt), var(--belt-edge));
+      transform: perspective(600px) rotateX(4deg);
+      transform-origin: bottom center;
+    }
+
+    .belt::before,
+    .belt::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 10px;
+      background: rgba(0,0,0,0.28);
+    }
+
+    .belt::before {
+      left: 0;
+    }
+
+    .belt::after {
+      right: 0;
+    }
+
+    .fruit-runner {
+      position: absolute;
+      left: 50%;
+      top: 18px;
+      width: 74px;
+      height: 74px;
+      transform: translate(-50%, 0) scale(0.72);
+      filter: drop-shadow(0 18px 18px rgba(0,0,0,0.35));
+      transition: none;
+      z-index: 3;
+    }
+
+    .fruit-runner.moving {
+      animation: approach var(--run-ms, 1350ms) linear forwards;
+    }
+
+    @keyframes approach {
+      from {
+        top: 18px;
+        transform: translate(-50%, 0) scale(0.68);
+      }
+      to {
+        top: calc(100% - 142px);
+        transform: translate(-50%, 0) scale(1.28);
+      }
+    }
+
+    .sort-boxes {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      z-index: 4;
+    }
+
+    .sort-box {
+      min-height: 118px;
+      border-radius: 8px;
+      border: 2px solid rgba(255,255,255,0.65);
+      background: rgba(255,255,255,0.12);
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      gap: 8px;
+      padding: 12px;
+      color: #fff;
+      text-align: center;
+      backdrop-filter: blur(8px);
+      cursor: pointer;
+      user-select: none;
+      transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+    }
+
+    .sort-box:hover {
+      border-color: #fff;
+      background: rgba(255,255,255,0.18);
+    }
+
+    .sort-box:active {
+      transform: translateY(2px);
+    }
+
+    .sort-box.left {
+      box-shadow: inset 0 0 0 999px rgba(39,110,241,0.12);
+    }
+
+    .sort-box.right {
+      box-shadow: inset 0 0 0 999px rgba(10,143,90,0.12);
+    }
+
+    .box-key {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 28px;
+      border-radius: 6px;
+      background: #fff;
+      color: #142235;
+      font-weight: 850;
+      font-size: 17px;
+    }
+
+    .box-label {
+      font-size: clamp(22px, 2.5vw, 32px);
+      font-weight: 850;
+      line-height: 1;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      text-transform: capitalize;
+    }
+
+    .box-image {
+      width: 68px;
+      height: 68px;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 22px;
+      background: rgba(17,24,32,0.76);
+      z-index: 8;
+      text-align: center;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .overlay-panel {
+      width: min(540px, 100%);
+      color: #fff;
+    }
+
+    .overlay-panel h3 {
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .overlay-panel p {
+      color: rgba(255,255,255,0.78);
+      margin: 0 0 18px;
+      font-size: 16px;
+    }
+
+    .countdown-number {
+      color: #fff;
+      font-size: clamp(80px, 12vw, 168px);
+      line-height: 1;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 12px 34px rgba(0,0,0,0.36);
+      transform: scale(1);
+      opacity: 0.96;
+    }
+
+    .countdown-number.pulse {
+      animation: countdownPulse 360ms ease;
+    }
+
+    @keyframes countdownPulse {
+      from {
+        transform: scale(0.72);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 0.96;
+      }
+    }
+
+    .overlay-actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 760;
+      border: 1px solid transparent;
+    }
+
+    .btn:hover {
+      filter: brightness(0.96);
+    }
+
+    .btn.secondary {
+      background: #fff;
+      color: #142235;
+      border-color: var(--line);
+    }
+
+    .btn.ghost {
+      background: transparent;
+      color: #fff;
+      border-color: rgba(255,255,255,0.48);
+    }
+
+    .btn[disabled] {
+      opacity: 0.48;
+      cursor: not-allowed;
+    }
+
+    .feedback {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 6;
+      min-height: 36px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 850;
+      background: rgba(255,255,255,0.94);
+      color: #142235;
+      opacity: 0;
+      transition: opacity 140ms ease, transform 140ms ease;
+    }
+
+    .feedback.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(6px);
+    }
+
+    .feedback.good {
+      color: var(--green);
+    }
+
+    .feedback.bad {
+      color: var(--red);
+    }
+
+    .training-wrap {
+      display: grid;
+      place-items: center;
+      min-height: 280px;
+      margin: 18px 0;
+    }
+
+    .training-pair {
+      display: grid;
+      justify-items: center;
+      align-content: center;
+      gap: 14px;
+      width: min(340px, 100%);
+      min-height: 250px;
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 8px;
+      padding: 24px;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .training-img {
+      width: 132px;
+      height: 132px;
+      filter: drop-shadow(0 18px 22px rgba(0,0,0,0.30));
+    }
+
+    .training-word {
+      text-align: center;
+      font-size: clamp(30px, 5vw, 48px);
+      font-weight: 880;
+      text-transform: capitalize;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 130ms ease, transform 130ms ease;
+    }
+
+    .training-word.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .timer {
+      font-variant-numeric: tabular-nums;
+      font-weight: 880;
+      color: #fff;
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .score-item {
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 8px;
+      padding: 12px;
+      background: rgba(255,255,255,0.08);
+      text-align: left;
+    }
+
+    .score-item small {
+      display: block;
+      color: rgba(255,255,255,0.68);
+      margin-bottom: 4px;
+    }
+
+    .score-item b {
+      color: #fff;
+      font-size: 20px;
+    }
+
+    .score-compare {
+      grid-column: 1 / -1;
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+      overflow-x: auto;
+      text-align: left;
+    }
+
+    .score-compare-title {
+      padding: 12px;
+      color: rgba(255,255,255,0.76);
+      font-size: 13px;
+      font-weight: 820;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid rgba(255,255,255,0.18);
+    }
+
+    .score-table {
+      width: 100%;
+      min-width: 460px;
+      border-collapse: collapse;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .score-table th,
+    .score-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.14);
+      vertical-align: top;
+    }
+
+    .score-table tr:last-child th,
+    .score-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .score-table th {
+      color: #fff;
+      text-align: left;
+      font-weight: 820;
+    }
+
+    .score-table th span {
+      display: block;
+      margin-top: 2px;
+      color: rgba(255,255,255,0.62);
+      font-size: 12px;
+      font-weight: 680;
+    }
+
+    .score-table td {
+      color: rgba(255,255,255,0.82);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .score-table .current th,
+    .score-table .current td {
+      background: rgba(39,110,241,0.18);
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 34px;
+    }
+
+    .compare {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 20px;
+      min-height: 230px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .compare .attempt-badge {
+      width: fit-content;
+      border-radius: 8px;
+      padding: 7px 10px;
+      color: #fff;
+      background: #142235;
+      font-weight: 820;
+      font-size: 13px;
+    }
+
+    .compare p {
+      font-size: 16px;
+      margin: 0;
+    }
+
+    .mini-demo {
+      margin-top: auto;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      align-items: center;
+      color: #142235;
+      font-weight: 760;
+    }
+
+    .mini-box {
+      min-height: 58px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #f8fafc;
+      text-transform: capitalize;
+      padding: 8px;
+    }
+
+    .mini-box svg {
+      width: 46px;
+      height: 46px;
+    }
+
+    .takeaways {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 34px;
+    }
+
+    .takeaway {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 22px;
+      min-height: 260px;
+    }
+
+    .takeaway-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: var(--blue);
+      font-size: 24px;
+      font-weight: 880;
+      margin-bottom: 18px;
+    }
+
+    .takeaway:nth-child(2) .takeaway-icon {
+      background: var(--green);
+    }
+
+    .takeaway:nth-child(3) .takeaway-icon {
+      background: var(--violet);
+    }
+
+    .takeaway p {
+      font-size: 16px;
+      margin-top: 12px;
+    }
+
+    .analogy-board {
+      margin-top: 28px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: clamp(20px, 3vw, 34px);
+      display: grid;
+      gap: 22px;
+    }
+
+    .coin-cursor-slide,
+    .coin-cursor-slide * {
+      cursor: var(--coin-cursor);
+    }
+
+    .analogy-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+      font-size: clamp(21px, 3vw, 38px);
+      font-weight: 850;
+      text-align: center;
+    }
+
+    .analogy-term {
+      border: 1px solid #dfe6ee;
+      border-radius: 8px;
+      min-height: 78px;
+      display: grid;
+      place-items: center;
+      background: #f8fafc;
+      padding: 12px;
+      overflow-wrap: anywhere;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+    }
+
+    .analogy-term.boy {
+      color: #143a63;
+      border-color: #8bb7ee;
+      background:
+        linear-gradient(135deg, rgba(59,130,246,0.26), rgba(255,255,255,0.96)),
+        #f8fbff;
+    }
+
+    .analogy-term.girl {
+      color: #77233f;
+      border-color: #f2a7bd;
+      background:
+        linear-gradient(135deg, rgba(244,114,182,0.26), rgba(255,255,255,0.96)),
+        #fff8fb;
+    }
+
+    .analogy-term.king {
+      color: #17305f;
+      border-color: #e4b95e;
+      background:
+        linear-gradient(135deg, rgba(59,130,246,0.25), rgba(245,158,11,0.34)),
+        #fffdf5;
+    }
+
+    .analogy-term.queen {
+      color: #722046;
+      border-color: #e7aa4f;
+      background:
+        linear-gradient(135deg, rgba(244,114,182,0.27), rgba(245,158,11,0.34)),
+        #fff8f1;
+    }
+
+    .scratch-card {
+      cursor: inherit;
+      user-select: none;
+    }
+
+    .coin-cursor-slide .scratch-card,
+    .coin-cursor-slide .scratch-card *,
+    .coin-cursor-slide .scratch-card.revealed,
+    .coin-cursor-slide .scratch-card.revealed * {
+      cursor: var(--coin-cursor);
+    }
+
+    .coin-cursor-slide.coin-cursor-spent,
+    .coin-cursor-slide.coin-cursor-spent * {
+      cursor: auto;
+    }
+
+    .coin-cursor-slide.coin-cursor-spent .scratch-card,
+    .coin-cursor-slide.coin-cursor-spent .scratch-card *,
+    .coin-cursor-slide.coin-cursor-spent .scratch-card.revealed,
+    .coin-cursor-slide.coin-cursor-spent .scratch-card.revealed * {
+      cursor: auto;
+    }
+
+    .scratch-answer {
+      position: relative;
+      z-index: 1;
+    }
+
+    .scratch-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      cursor: inherit;
+      touch-action: none;
+    }
+
+    .scratch-card.revealed .scratch-layer {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .embedding-layout {
+      display: grid;
+      grid-template-columns: minmax(420px, 0.72fr) minmax(680px, 1.28fr);
+      gap: clamp(36px, 5vw, 82px);
+      align-items: center;
+    }
+
+    .embedding-notes {
+      display: grid;
+      gap: 12px;
+      margin-top: 28px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .embedding-notes li {
+      border-left: 4px solid var(--blue);
+      border-radius: 0 8px 8px 0;
+      background: rgba(255,255,255,0.76);
+      padding: 13px 15px;
+      color: #405066;
+      line-height: 1.42;
+    }
+
+    .embedding-notes li:nth-child(2) {
+      border-left-color: var(--green);
+    }
+
+    .embedding-notes li:nth-child(3) {
+      border-left-color: var(--violet);
+    }
+
+    .embedding-demo {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(90deg, rgba(18,32,51,0.05) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(18,32,51,0.05) 1px, transparent 1px),
+        #fff;
+      background-size: 48px 48px;
+      box-shadow: var(--shadow);
+      padding: clamp(18px, 2vw, 28px);
+      min-width: 0;
+    }
+
+    .embedding-plane {
+      position: relative;
+      height: min(58vh, 620px);
+      min-height: 500px;
+      border: 1px solid #dfe6ee;
+      border-radius: 8px;
+      background:
+        radial-gradient(circle at 74% 39%, rgba(105,65,198,0.08), transparent 18%),
+        radial-gradient(circle at 58% 66%, rgba(210,138,0,0.08), transparent 16%),
+        linear-gradient(90deg, rgba(18,32,51,0.04) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(18,32,51,0.04) 1px, transparent 1px),
+        #f8fafc;
+      background-size: auto, auto, 48px 48px, 48px 48px;
+      overflow: hidden;
+    }
+
+    .embedding-arrows {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    .embedding-arrows line {
+      vector-effect: non-scaling-stroke;
+      stroke-linecap: round;
+    }
+
+    .embedding-axis {
+      stroke: #94a3b8;
+      stroke-width: 2;
+      marker-end: url(#embeddingAxisHead);
+    }
+
+    .embedding-axis.depth {
+      display: none;
+    }
+
+    .embedding-guide {
+      stroke: rgba(18,32,51,0.28);
+      stroke-width: 2;
+      stroke-dasharray: 5 7;
+      marker-end: none;
+    }
+
+    .vector-shadow {
+      stroke: rgba(10,143,90,0.32);
+      stroke-width: 3;
+      marker-end: url(#greenArrowHead);
+      opacity: 0.28;
+      animation: sourceVectorStep 6000ms ease-in-out infinite;
+    }
+
+    .moving-vector-line {
+      stroke: var(--violet);
+      stroke-width: 4;
+      marker-end: url(#violetArrowHead);
+      filter: drop-shadow(0 6px 10px rgba(105,65,198,0.28));
+    }
+
+    .moving-vector {
+      animation: movingVectorPulse 6000ms ease-in-out infinite;
+    }
+
+    .embedding-point {
+      position: absolute;
+      left: var(--x);
+      top: var(--y);
+      transform: translate(-50%, -50%);
+      width: 0;
+      height: 0;
+      z-index: 2;
+    }
+
+    .embedding-dot {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      box-shadow: 0 7px 18px rgba(18,32,51,0.18);
+      background: var(--dot-color);
+      transform: translate(-50%, -50%);
+    }
+
+    .embedding-label {
+      position: absolute;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.94);
+      border: 1px solid #dfe6ee;
+      color: #122033;
+      padding: 6px 9px;
+      font-weight: 850;
+      line-height: 1;
+      text-transform: lowercase;
+      white-space: nowrap;
+      box-shadow: 0 7px 18px rgba(18,32,51,0.08);
+    }
+
+    .embedding-label.above {
+      bottom: 17px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .embedding-label.below {
+      top: 17px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .embedding-label.right {
+      left: 17px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .embedding-label.left {
+      right: 17px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .embedding-point.boy .embedding-dot,
+    .embedding-point.boy .embedding-label {
+      animation: boyStepGlow 6000ms ease-in-out infinite;
+    }
+
+    .embedding-point.girl .embedding-dot,
+    .embedding-point.girl .embedding-label {
+      animation: girlStepGlow 6000ms ease-in-out infinite;
+    }
+
+    .embedding-point.king .embedding-dot,
+    .embedding-point.king .embedding-label {
+      animation: kingStepGlow 6000ms ease-in-out infinite;
+    }
+
+    .embedding-point.queen {
+      z-index: 5;
+    }
+
+    .embedding-point.queen .embedding-dot {
+      animation: queenDotGlow 6000ms ease-in-out infinite;
+    }
+
+    .embedding-point.queen .embedding-label {
+      color: #6d2bc1;
+      animation: queenLabelGlow 6000ms ease-in-out infinite;
+    }
+
+    .plane-tag {
+      position: absolute;
+      left: var(--x);
+      top: var(--y);
+      transform: translate(-50%, -50%);
+      border-radius: 8px;
+      border: 1px solid #dfe6ee;
+      background: rgba(255,255,255,0.94);
+      color: #405066;
+      padding: 6px 9px;
+      font-size: 13px;
+      font-weight: 820;
+      line-height: 1.15;
+      white-space: nowrap;
+      z-index: 2;
+      box-shadow: 0 7px 18px rgba(18,32,51,0.08);
+    }
+
+    .plane-tag.vector-source {
+      color: var(--green);
+      animation: sourceVectorStep 6000ms ease-in-out infinite;
+    }
+
+    .plane-tag.vector-copy {
+      color: var(--violet);
+      animation: translatedVectorPulse 6000ms ease-in-out infinite;
+    }
+
+    .plane-tag.position-tag {
+      color: #d28a00;
+      animation: kingStepGlow 6000ms ease-in-out infinite;
+    }
+
+    .traveler {
+      position: absolute;
+      left: 58%;
+      top: 68%;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      background: var(--amber);
+      box-shadow: 0 12px 26px rgba(210,138,0,0.34);
+      transform: translate(-50%, -50%);
+      animation: kingVectorTravel 3600ms ease-in-out infinite;
+      z-index: 3;
+    }
+
+    .traveler-label {
+      position: absolute;
+      left: 58%;
+      top: 68%;
+      transform: translate(-50%, calc(-100% - 26px));
+      border-radius: 8px;
+      background: #122033;
+      color: #fff;
+      padding: 7px 10px;
+      font-size: 14px;
+      font-weight: 820;
+      line-height: 1.15;
+      white-space: nowrap;
+      animation: travelerLabelMove 3600ms ease-in-out infinite;
+      z-index: 4;
+    }
+
+    .embedding-equation {
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(8px, 1vw, 14px);
+      flex-wrap: wrap;
+      color: #122033;
+      font-size: clamp(22px, 2.5vw, 38px);
+      font-weight: 860;
+    }
+
+    .equation-term {
+      border-radius: 8px;
+      border: 1px solid #dfe6ee;
+      background: #f8fafc;
+      padding: 8px 12px;
+      line-height: 1;
+    }
+
+    .equation-term.king {
+      color: #d28a00;
+      animation: kingStepGlow 6000ms ease-in-out infinite;
+    }
+
+    .equation-term.vector {
+      color: var(--green);
+      animation: equationVectorGlow 6000ms ease-in-out infinite;
+    }
+
+    .equation-term.queen {
+      color: #6d2bc1;
+      animation: queenGlow 6000ms ease-in-out infinite;
+    }
+
+    @keyframes movingVectorPulse {
+      0%,
+      12%,
+      100% {
+        opacity: 0.22;
+      }
+      18%,
+      88% {
+        opacity: 1;
+      }
+    }
+
+    @keyframes translatedVectorPulse {
+      0%,
+      48%,
+      100% {
+        opacity: 0.22;
+      }
+      58%,
+      88% {
+        opacity: 1;
+      }
+    }
+
+    @keyframes sourceVectorStep {
+      0%,
+      10%,
+      44%,
+      100% {
+        opacity: 0.32;
+        box-shadow: 0 7px 18px rgba(18,32,51,0.08);
+        filter: none;
+      }
+      18%,
+      34% {
+        opacity: 1;
+        box-shadow: 0 0 0 4px rgba(10,143,90,0.16), 0 12px 28px rgba(10,143,90,0.20);
+        filter: brightness(1.04);
+      }
+    }
+
+    @keyframes equationVectorGlow {
+      0%,
+      36% {
+        box-shadow: 0 0 0 4px rgba(10,143,90,0.16), 0 12px 28px rgba(10,143,90,0.20);
+        filter: brightness(1.05);
+      }
+      44%,
+      100% {
+        box-shadow: none;
+        filter: none;
+      }
+    }
+
+    @keyframes boyStepGlow {
+      0%,
+      16% {
+        box-shadow: 0 0 0 7px rgba(39,110,241,0.16), 0 12px 28px rgba(39,110,241,0.24);
+        filter: brightness(1.06);
+      }
+      24%,
+      100% {
+        box-shadow: 0 7px 18px rgba(18,32,51,0.16);
+        filter: none;
+      }
+    }
+
+    @keyframes girlStepGlow {
+      0%,
+      14%,
+      40%,
+      100% {
+        box-shadow: 0 7px 18px rgba(18,32,51,0.16);
+        filter: none;
+      }
+      20%,
+      34% {
+        box-shadow: 0 0 0 7px rgba(224,90,163,0.16), 0 12px 28px rgba(224,90,163,0.24);
+        filter: brightness(1.06);
+      }
+    }
+
+    @keyframes kingStepGlow {
+      0%,
+      34%,
+      58%,
+      100% {
+        box-shadow: 0 7px 18px rgba(18,32,51,0.16);
+        filter: none;
+      }
+      42%,
+      52% {
+        box-shadow: 0 0 0 7px rgba(210,138,0,0.18), 0 12px 28px rgba(210,138,0,0.26);
+        filter: brightness(1.06);
+      }
+    }
+
+    @keyframes kingVectorTravel {
+      0%,
+      28% {
+        left: 58%;
+        top: 68%;
+        background: var(--amber);
+      }
+      58%,
+      82% {
+        left: 80%;
+        top: 44%;
+        background: #6d2bc1;
+      }
+      100% {
+        left: 58%;
+        top: 68%;
+        background: var(--amber);
+      }
+    }
+
+    @keyframes travelerLabelMove {
+      0%,
+      28% {
+        left: 58%;
+        top: 68%;
+      }
+      58%,
+      82% {
+        left: 80%;
+        top: 44%;
+      }
+      100% {
+        left: 58%;
+        top: 68%;
+      }
+    }
+
+    @keyframes queenGlow {
+      0%,
+      60%,
+      100% {
+        box-shadow: none;
+      }
+      70%,
+      92% {
+        box-shadow: 0 0 0 4px rgba(105,65,198,0.16), 0 12px 28px rgba(105,65,198,0.20);
+      }
+    }
+
+    @keyframes queenDotGlow {
+      0%,
+      60%,
+      100% {
+        box-shadow: 0 7px 18px rgba(18,32,51,0.18);
+        transform: translate(-50%, -50%) scale(1);
+      }
+      70%,
+      92% {
+        box-shadow: 0 0 0 9px rgba(105,65,198,0.18), 0 12px 28px rgba(105,65,198,0.32);
+        transform: translate(-50%, -50%) scale(1.12);
+      }
+    }
+
+    @keyframes queenLabelGlow {
+      0%,
+      60%,
+      100% {
+        box-shadow: 0 7px 18px rgba(18,32,51,0.16);
+        filter: none;
+      }
+      70%,
+      92% {
+        box-shadow: 0 0 0 7px rgba(105,65,198,0.16), 0 12px 28px rgba(105,65,198,0.24);
+        filter: brightness(1.06);
+      }
+    }
+
+    .prompt-builder {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 20px;
+      margin-top: 20px;
+      align-items: start;
+    }
+
+    .builder-controls {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+      grid-auto-rows: max-content;
+    }
+
+    .prompt-source {
+      display: grid;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px 12px;
+    }
+
+    .source-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .prompt-source select,
+    .prompt-source textarea {
+      width: 100%;
+      border: 1px solid #d9e0e8;
+      border-radius: 8px;
+      background: #f8fafc;
+      color: #122033;
+      padding: 9px 10px;
+    }
+
+    .prompt-source textarea {
+      min-height: 92px;
+      resize: none;
+      line-height: 1.35;
+    }
+
+    .prompt-source textarea[disabled] {
+      cursor: default;
+      opacity: 1;
+      color: #122033;
+      -webkit-text-fill-color: #122033;
+    }
+
+    .eval-status {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .api-settings {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .api-settings-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .api-settings-title b {
+      color: #122033;
+      font-size: 14px;
+    }
+
+    .api-settings-title span,
+    .api-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .api-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .api-field {
+      display: grid;
+      gap: 6px;
+      color: #122033;
+      font-size: 13px;
+      font-weight: 760;
+    }
+
+    .api-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .api-field input {
+      width: 100%;
+      border: 1px solid #d9e0e8;
+      border-radius: 8px;
+      background: #fff;
+      color: #122033;
+      padding: 9px 10px;
+      font-weight: 400;
+    }
+
+    .check-row {
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      gap: 10px;
+      align-items: start;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: #fff;
+    }
+
+    .check-row input {
+      width: 18px;
+      height: 18px;
+      margin-top: 3px;
+      accent-color: var(--blue);
+    }
+
+    .check-row b {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .check-row span {
+      display: block;
+      color: var(--muted);
+      line-height: 1.28;
+      font-size: 14px;
+    }
+
+    .prompt-output {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #122033;
+      color: #fff;
+      padding: 22px;
+      min-height: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    @media (min-width: 981px) {
+      .prompt-output {
+        margin-top: -155px;
+        min-height: clamp(520px, 58vh, 720px);
+        overflow: auto;
+      }
+    }
+
+    .prompt-output pre {
+      white-space: pre-wrap;
+      margin: 0;
+      line-height: 1.55;
+      font-size: 15px;
+      color: #eaf0f7;
+    }
+
+    .cost-meter {
+      margin-top: auto;
+      display: grid;
+      gap: 8px;
+    }
+
+    .meter-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      color: rgba(255,255,255,0.76);
+      font-size: 14px;
+    }
+
+    .meter-track {
+      height: 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.18);
+      overflow: hidden;
+    }
+
+    .meter-fill {
+      height: 100%;
+      width: 50%;
+      background: linear-gradient(90deg, var(--green), var(--amber));
+      transition: width 180ms ease;
+    }
+
+    .prompt-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(18,32,51,0.48);
+    }
+
+    .prompt-modal.hidden {
+      display: none;
+    }
+
+    .prompt-modal-card {
+      width: min(820px, 100%);
+      max-height: calc(100vh - 48px);
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 28px 80px rgba(18,32,51,0.26);
+      padding: 22px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .prompt-modal-view {
+      display: grid;
+      gap: 14px;
+    }
+
+    .prompt-modal-view.hidden {
+      display: none;
+    }
+
+    .prompt-modal-heading {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .prompt-modal-card h3 {
+      margin: 0;
+      font-size: 26px;
+    }
+
+    .prompt-modal-card p {
+      margin: 6px 0 0;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .text-link {
+      border: 0;
+      background: transparent;
+      color: var(--blue);
+      font-weight: 780;
+      padding: 4px 0;
+      white-space: nowrap;
+    }
+
+    .text-link:hover {
+      text-decoration: underline;
+    }
+
+    .text-link[disabled] {
+      color: var(--muted);
+      cursor: not-allowed;
+      text-decoration: none;
+    }
+
+    .prompt-modal-card textarea {
+      width: 100%;
+      min-height: 220px;
+      border: 1px solid #d9e0e8;
+      border-radius: 8px;
+      background: #f8fafc;
+      color: #122033;
+      padding: 12px;
+      line-height: 1.4;
+      resize: vertical;
+    }
+
+    .prompt-modal-status {
+      min-height: 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .technique-audit {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .technique-audit.hidden {
+      display: none;
+    }
+
+    .technique-audit-title {
+      color: #122033;
+      font-size: 13px;
+      font-weight: 820;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .audit-list {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .audit-row {
+      min-height: 78px;
+      border: 1px solid #dfe6ee;
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+    }
+
+    .audit-icon {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 900;
+      line-height: 1;
+      position: relative;
+    }
+
+    .audit-row.present .audit-icon {
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .audit-row.present .audit-icon::before {
+      content: "\2713";
+      font-size: 17px;
+    }
+
+    .audit-row.missing .audit-icon {
+      width: 0;
+      height: 0;
+      border-left: 13px solid transparent;
+      border-right: 13px solid transparent;
+      border-bottom: 24px solid var(--amber);
+      color: #122033;
+    }
+
+    .audit-row.missing .audit-icon::before {
+      content: "!";
+      position: absolute;
+      left: -3px;
+      top: 8px;
+      font-size: 14px;
+      font-weight: 920;
+    }
+
+    .audit-row b {
+      display: block;
+      color: #122033;
+      font-size: 13px;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+
+    .audit-row small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.2;
+    }
+
+    .prompt-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .system-prompt-toolbar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .system-prompt-render {
+      max-height: min(58vh, 620px);
+      overflow: auto;
+      border: 1px solid #d9e0e8;
+      border-radius: 8px;
+      background: #f8fafc;
+      color: #122033;
+      padding: 18px;
+    }
+
+    .system-prompt-render p {
+      margin: 0 0 14px;
+      font-size: 15px;
+      line-height: 1.55;
+      color: #334155;
+    }
+
+    .system-prompt-render ul {
+      margin: 0 0 16px;
+      padding-left: 22px;
+      color: #334155;
+    }
+
+    .system-prompt-render li {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .system-prompt-render pre {
+      margin: 0 0 14px;
+      border-radius: 8px;
+      background: #122033;
+      color: #eaf0f7;
+      padding: 14px;
+      overflow: auto;
+      line-height: 1.5;
+      font-size: 13px;
+    }
+
+    .system-prompt-render code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.42);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+    }
+
+    .spinner.hidden {
+      display: none;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px clamp(16px, 3vw, 34px);
+      border-top: 1px solid var(--line);
+      background: rgba(255,255,255,0.88);
+      position: sticky;
+      bottom: 0;
+      z-index: 20;
+    }
+
+    .nav-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .dot-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #cbd5e1;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .dot.active {
+      background: var(--blue);
+    }
+
+    .dot:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 3px;
+    }
+
+    @media (max-width: 1500px) {
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-wide {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .two-col,
+      .game-layout,
+      .embedding-layout,
+      .prompt-builder {
+        grid-template-columns: 1fr;
+      }
+
+      .metric-strip,
+      .model-band,
+      .compare-grid,
+      .takeaways {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .audit-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .model-step {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .model-step:last-child {
+        border-bottom: 0;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .topbar {
+        align-items: flex-start;
+      }
+
+      .brand {
+        max-width: 190px;
+      }
+
+      .progress-wrap {
+        display: none;
+      }
+
+      .slide {
+        padding: 22px 14px;
+        min-height: calc(100vh - 149px);
+      }
+
+      .embedding-plane {
+        min-height: 360px;
+        height: 48vh;
+      }
+
+      .traveler-label {
+        font-size: 12px;
+        white-space: normal;
+        width: max-content;
+        max-width: 140px;
+        text-align: center;
+      }
+
+      .plane-tag {
+        max-width: 110px;
+        white-space: normal;
+        text-align: center;
+        font-size: 11px;
+      }
+
+      .prompt-modal {
+        padding: 12px;
+      }
+
+      .prompt-modal-heading {
+        grid-template-columns: 1fr;
+      }
+
+      .system-prompt-toolbar {
+        justify-content: stretch;
+      }
+
+      .system-prompt-toolbar .btn {
+        flex: 1 1 auto;
+      }
+
+      .api-grid,
+      .metric-strip,
+      .model-band,
+      .compare-grid,
+      .takeaways,
+      .game-top,
+      .score-grid,
+      .audit-list {
+        grid-template-columns: 1fr;
+      }
+
+      .game-stage {
+        min-height: 440px;
+        height: 60vh;
+      }
+
+      .belt {
+        inset: 0 22%;
+      }
+
+      .sort-boxes {
+        gap: 8px;
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+      }
+
+      .sort-box {
+        min-height: 110px;
+        padding: 10px 6px;
+      }
+
+      .box-label {
+        font-size: 22px;
+      }
+
+      .analogy-row {
+        grid-template-columns: 1fr;
+      }
+
+      .footer {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .nav-actions {
+        width: 100%;
+      }
+
+      .nav-actions .btn {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" aria-label="Interactive deck about prompting large language models">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">::</div>
+        <span>Better Prompting Through Analogy</span>
+      </div>
+      <div class="progress-wrap" aria-hidden="true">
+        <div class="progress" id="progress"></div>
+      </div>
+      <div class="slide-count" id="slideCount">1 / 8</div>
+    </header>
+
+    <section class="slides">
+      <article class="slide active" data-title="Why prompts matter">
+        <div class="slide-inner hero-wide">
+          <div>
+            <div class="eyebrow">How to better prompt LLMs</div>
+            <h1>Make the next token<br>easier to choose</h1>
+            <p class="lead">A good prompt<br>reduces ambiguity<br>reduces conversion work<br>and makes the desired operation match the model's learned patterns.</p>
+            <div class="metric-strip">
+              <div class="metric">
+                <strong>Accurate</strong>
+                <span>Clear inputs and success criteria<br>produce fewer wrong branches.</span>
+              </div>
+              <div class="metric">
+                <strong>Fast</strong>
+                <span>Less hidden reasoning<br>means the model reaches the answer sooner.</span>
+              </div>
+              <div class="metric">
+                <strong>Fewer Tokens</strong>
+                <span>Compact structure<br>avoids repeated clarification<br>and repair.</span>
+              </div>
+              <div class="metric">
+                <strong>Lower Cost</strong>
+                <span>Shorter inference<br>and fewer retries<br>cut usage spend.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Prompting model">
+        <div class="slide-inner">
+          <div class="eyebrow">The practical model</div>
+          <h2>Every unnecessary transform<br>is a chance to be<br>slower, longer, or wrong</h2>
+          <p class="lead">The following fruit game will make it obvious.<br>You will sort the same fruits three ways<br>and compare the cognitive overhead.</p>
+          <div class="model-band">
+            <div class="model-step">
+              <div class="num">1</div>
+              <b>See the input</b>
+              <span>The model receives tokens<br>images<br>code<br>logs<br>instructions.</span>
+            </div>
+              <div class="model-step">
+                <div class="num">2</div>
+                <b>Map it</b>
+                <span>It converts the request<br>into a familiar learned pattern.</span>
+              </div>
+            <div class="model-step">
+              <div class="num">3</div>
+              <b>Choose action</b>
+              <span>It follows constraints<br>selects tools<br>or generates an answer.</span>
+            </div>
+            <div class="model-step">
+              <div class="num">4</div>
+              <b>Emit output</b>
+              <span>The requested answer shape<br>determines how much cleanup is needed.</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Attempt 1">
+        <div class="slide-inner game-layout">
+          <div class="game-copy">
+            <div class="eyebrow">Attempt 1</div>
+            <h2>Image in<br>string labels out</h2>
+            <p>The fruit moves toward you.<br>The boxes show text labels.<br>Press an arrow key<br>or click the matching box<br>before the fruit reaches the boxes.</p>
+            <ul class="rule-list">
+              <li>Task: match a fruit image to a word<br>then choose the matching side.</li>
+              <li>Hidden cost: image-to-label conversion<br>happens on every fruit.</li>
+              <li>Run length: 20 fruits.</li>
+            </ul>
+          </div>
+          <div class="game-shell" data-game="text">
+            <div class="game-top">
+              <div class="stat"><small>Fruit</small><b data-stat="count">0 / 20</b></div>
+              <div class="stat"><small>Correct</small><b data-stat="correct">0</b></div>
+              <div class="stat"><small>Avg All</small><b data-stat="avgAll">0.00s</b></div>
+              <div class="stat"><small>Avg Correct</small><b data-stat="avgCorrect">0.00s</b></div>
+            </div>
+            <div class="game-stage">
+              <div class="belt"></div>
+              <div class="feedback" data-feedback></div>
+              <div class="fruit-runner" data-runner></div>
+              <div class="sort-boxes">
+                <div class="sort-box left" data-box="left">
+                  <span class="box-key">&lt;</span>
+                  <div class="box-label" data-box-content="left">left</div>
+                </div>
+                <div class="sort-box right" data-box="right">
+                  <span class="box-key">&gt;</span>
+                  <div class="box-label" data-box-content="right">right</div>
+                </div>
+              </div>
+              <div class="overlay" data-overlay="start">
+                <div class="overlay-panel">
+                  <h3>Sort 20 fruits</h3>
+                  <p>Click a box<br>or use the keyboard arrows<br>to sort each fruit.</p>
+                  <div class="overlay-actions">
+                    <button class="btn" data-action="start">Start attempt 1</button>
+                  </div>
+                </div>
+              </div>
+              <div class="overlay hidden" data-overlay="result">
+                <div class="overlay-panel">
+                  <h3>Attempt complete</h3>
+                  <div class="score-grid" data-results></div>
+                  <div class="overlay-actions">
+                    <button class="btn ghost" data-action="start">Run again</button>
+                    <button class="btn" data-action="next-slide">Next attempt</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Attempt 2">
+        <div class="slide-inner game-layout">
+          <div class="game-copy">
+            <div class="eyebrow">Attempt 2</div>
+            <h2>Image in<br>image labels out</h2>
+            <p>The rule is unchanged<br>but the boxes now show the fruit image<br>instead of a string label.</p>
+            <ul class="rule-list">
+              <li>Task: compare image with image<br>then choose the matching side.</li>
+              <li>Expected result: fewer conversions<br>faster reactions<br>fewer errors.</li>
+              <li>Prompt lesson: align the prompt format<br>with the data the model already has.</li>
+            </ul>
+          </div>
+          <div class="game-shell" data-game="image">
+            <div class="game-top">
+              <div class="stat"><small>Fruit</small><b data-stat="count">0 / 20</b></div>
+              <div class="stat"><small>Correct</small><b data-stat="correct">0</b></div>
+              <div class="stat"><small>Avg All</small><b data-stat="avgAll">0.00s</b></div>
+              <div class="stat"><small>Avg Correct</small><b data-stat="avgCorrect">0.00s</b></div>
+            </div>
+            <div class="game-stage">
+              <div class="belt"></div>
+              <div class="feedback" data-feedback></div>
+              <div class="fruit-runner" data-runner></div>
+              <div class="sort-boxes">
+                <div class="sort-box left" data-box="left">
+                  <span class="box-key">&lt;</span>
+                  <div class="box-label" data-box-content="left">left</div>
+                </div>
+                <div class="sort-box right" data-box="right">
+                  <span class="box-key">&gt;</span>
+                  <div class="box-label" data-box-content="right">right</div>
+                </div>
+              </div>
+              <div class="overlay" data-overlay="start">
+                <div class="overlay-panel">
+                  <h3>Sort with visual labels</h3>
+                  <p>The only change<br>is the box label format.<br>Click a box<br>or use the keyboard arrows.</p>
+                  <div class="overlay-actions">
+                    <button class="btn" data-action="start">Start attempt 2</button>
+                  </div>
+                </div>
+              </div>
+              <div class="overlay hidden" data-overlay="result">
+                <div class="overlay-panel">
+                  <h3>Attempt complete</h3>
+                  <div class="score-grid" data-results></div>
+                  <div class="overlay-actions">
+                    <button class="btn ghost" data-action="start">Run again</button>
+                    <button class="btn" data-action="next-slide">Next attempt</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Attempt 3">
+        <div class="slide-inner game-layout">
+          <div class="game-copy">
+            <div class="eyebrow">Attempt 3</div>
+            <h2>String labels<br>with warm-up</h2>
+            <p>This attempt restores word labels.<br>Before the game starts<br>you get 30 seconds of examples:<br>fruit on top<br>text label below.</p>
+            <ul class="rule-list">
+              <li>Task: use examples<br>to reduce the cost of unavoidable conversion.</li>
+              <li>Prompt lesson: few-shot examples<br>preload the mapping.</li>
+              <li>Compare this run with attempt 1<br>to feel the warm-up effect.</li>
+            </ul>
+          </div>
+          <div class="game-shell" data-game="trained-text">
+            <div class="game-top">
+              <div class="stat"><small>Fruit</small><b data-stat="count">0 / 20</b></div>
+              <div class="stat"><small>Correct</small><b data-stat="correct">0</b></div>
+              <div class="stat"><small>Avg All</small><b data-stat="avgAll">0.00s</b></div>
+              <div class="stat"><small>Avg Correct</small><b data-stat="avgCorrect">0.00s</b></div>
+            </div>
+            <div class="game-stage">
+              <div class="belt"></div>
+              <div class="feedback" data-feedback></div>
+              <div class="fruit-runner" data-runner></div>
+              <div class="sort-boxes">
+                <div class="sort-box left" data-box="left">
+                  <span class="box-key">&lt;</span>
+                  <div class="box-label" data-box-content="left">left</div>
+                </div>
+                <div class="sort-box right" data-box="right">
+                  <span class="box-key">&gt;</span>
+                  <div class="box-label" data-box-content="right">right</div>
+                </div>
+              </div>
+              <div class="overlay" data-overlay="start">
+                <div class="overlay-panel">
+                  <h3>Warm up first</h3>
+                  <p>A 30-second label-to-image pre-training screen<br>starts before sorting.</p>
+                  <div class="overlay-actions">
+                    <button class="btn" data-action="train">Begin 30s warm-up</button>
+                  </div>
+                </div>
+              </div>
+              <div class="overlay hidden" data-overlay="training">
+                <div class="overlay-panel">
+                  <h3>Pre-training <span class="timer" data-training-timer>30.0s</span></h3>
+                  <div class="training-wrap" data-training-pair></div>
+                </div>
+              </div>
+              <div class="overlay hidden" data-overlay="ready">
+                <div class="overlay-panel">
+                  <h3>Warm-up complete</h3>
+                  <p>Play starts<br>when you choose to begin.<br>Click a box<br>or use the keyboard arrows.</p>
+                  <div class="overlay-actions">
+                    <button class="btn" data-action="start">Start play</button>
+                    <button class="btn ghost" data-action="train">Repeat warm-up</button>
+                  </div>
+                </div>
+              </div>
+              <div class="overlay hidden" data-overlay="result">
+                <div class="overlay-panel">
+                  <h3>Attempt complete</h3>
+                  <div class="score-grid" data-results></div>
+                  <div class="overlay-actions">
+                    <button class="btn ghost" data-action="train">Warm up and rerun</button>
+                    <button class="btn" data-action="next-slide">See techniques</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-title="What changed">
+        <div class="slide-inner">
+          <div class="eyebrow">What the game demonstrates</div>
+          <h2>Prompting is like Coding</h2>
+          <p class="lead">You are not only writing instructions.<br>You are designing the path<br>from input to answer.</p>
+          <div class="compare-grid">
+            <div class="compare">
+              <div class="attempt-badge">Attempt 1</div>
+              <h3>More transforms</h3>
+              <p>The user sees a fruit image<br>converts it to a word<br>compares words<br>then acts.<br>More mental steps mean slower<br>and noisier execution.</p>
+              <div class="mini-demo">
+                <div class="mini-box" data-mini-fruit="apple"></div>
+                <span>to</span>
+                <div class="mini-box">apple</div>
+              </div>
+            </div>
+            <div class="compare">
+              <div class="attempt-badge">Attempt 2</div>
+              <h3>Direct match</h3>
+              <p>The label format<br>matches the input format.<br>The mapping is easier<br>so the same task consumes less attention.</p>
+              <div class="mini-demo">
+                <div class="mini-box" data-mini-fruit="orange"></div>
+                <span>to</span>
+                <div class="mini-box" data-mini-fruit="orange"></div>
+              </div>
+            </div>
+            <div class="compare">
+              <div class="attempt-badge">Attempt 3</div>
+              <h3>Few-shot warm-up</h3>
+              <p>When conversion cannot be avoided<br>examples train the mapping<br>immediately before the task.</p>
+              <div class="mini-demo">
+                <div class="mini-box" data-mini-fruit="lemon"></div>
+                <span>means</span>
+                <div class="mini-box">lemon</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide coin-cursor-slide" data-title="Techniques">
+        <div class="slide-inner">
+          <div class="eyebrow">Techniques learned</div>
+          <h2>Three prompting moves<br>that reduce<br>errors, latency, tokens, and cost</h2>
+          <div class="takeaways">
+            <div class="takeaway">
+              <div class="takeaway-icon">1</div>
+              <h3>Minimize transforms</h3>
+              <p>Ask in the representation closest to the input and output.<br>If the model has code, ask for code-shaped changes.<br>If it has a table, ask for a table-shaped answer.</p>
+            </div>
+            <div class="takeaway">
+              <div class="takeaway-icon">2</div>
+              <h3>Warm up with examples</h3>
+              <p>When a transform is unavoidable<br>add a few compact examples.<br>Examples reduce ambiguity<br>better than long abstract rules.</p>
+            </div>
+            <div class="takeaway">
+              <div class="takeaway-icon">3</div>
+              <h3>Use analogies</h3>
+              <p>Analogies describe the operation<br>instead of only describing the answer.<br>They let the model reuse<br>a familiar relation or pattern.</p>
+            </div>
+          </div>
+          <div class="analogy-board">
+            <h3>Remember ratio-proportion?</h3>
+            <div class="analogy-row" aria-label="boy is to girl as king is to queen">
+              <div class="analogy-term boy">Boy</div>
+              <span>:</span>
+              <div class="analogy-term girl">Girl</div>
+              <span>::</span>
+              <div class="analogy-term king">King</div>
+              <span>:</span>
+              <div class="analogy-term queen scratch-card" data-scratch-card aria-label="Scratch to reveal Queen">
+                <span class="scratch-answer">Queen</span>
+                <canvas class="scratch-layer" data-scratch-layer aria-hidden="true"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Embedding analogy">
+        <div class="slide-inner">
+          <div class="embedding-layout">
+            <div>
+              <div class="eyebrow">Why analogies work</div>
+              <h2>Analogies give LLMs a direction.</h2>
+              <p class="lead">In embedding space,<br>meaning is encoded as position.<br>A good analogy gives the model<br>a transformation to reuse.</p>
+              <ul class="embedding-notes">
+                <li><b>Position:</b> start from the meaning of <strong>king</strong>.</li>
+                <li><b>Vector:</b> reuse the relation <strong>boy -> girl</strong>.</li>
+                <li><b>Output:</b> move through that relation and land near <strong>queen</strong>.</li>
+              </ul>
+            </div>
+            <div class="embedding-demo">
+              <div class="embedding-plane" aria-label="Vector analogy showing king plus boy to girl equals queen">
+                <svg class="embedding-arrows" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                  <defs>
+                    <marker id="embeddingAxisHead" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto">
+                      <path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8"></path>
+                    </marker>
+                    <marker id="greenArrowHead" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto">
+                      <path d="M0,0 L8,4 L0,8 Z" fill="#0a8f5a"></path>
+                    </marker>
+                    <marker id="violetArrowHead" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto">
+                      <path d="M0,0 L8,4 L0,8 Z" fill="#6941c6"></path>
+                    </marker>
+                  </defs>
+                  <line class="embedding-axis" x1="8" y1="80" x2="92" y2="80"></line>
+                  <line class="embedding-axis" x1="50" y1="88" x2="50" y2="12"></line>
+                  <line class="embedding-guide" x1="18" y1="68" x2="58" y2="68"></line>
+                  <line class="embedding-guide" x1="35" y1="42" x2="75" y2="42"></line>
+                  <line class="vector-shadow" x1="18" y1="68" x2="35" y2="42"></line>
+                  <g class="moving-vector">
+                    <line class="moving-vector-line" x1="18" y1="68" x2="35" y2="42"></line>
+                    <animateTransform attributeName="transform" type="translate" values="0 0;0 0;40 0;40 0;0 0" keyTimes="0;0.36;0.60;0.88;1" dur="6s" repeatCount="indefinite"></animateTransform>
+                  </g>
+                </svg>
+                <div class="embedding-point boy" style="--x:18%; --y:68%; --dot-color:#276ef1;">
+                  <span class="embedding-dot"></span>
+                  <span class="embedding-label below">boy</span>
+                </div>
+                <div class="embedding-point girl" style="--x:35%; --y:42%; --dot-color:#e05aa3;">
+                  <span class="embedding-dot"></span>
+                  <span class="embedding-label above">girl</span>
+                </div>
+                <div class="embedding-point king" style="--x:58%; --y:68%; --dot-color:#d28a00;">
+                  <span class="embedding-dot"></span>
+                  <span class="embedding-label below">king</span>
+                </div>
+                <div class="embedding-point queen" style="--x:75%; --y:42%; --dot-color:#6d2bc1;">
+                  <span class="embedding-dot"></span>
+                  <span class="embedding-label right">queen</span>
+                </div>
+                <div class="plane-tag vector-source" style="--x:21%; --y:48%;">vector: boy -> girl</div>
+                <div class="plane-tag position-tag" style="--x:68%; --y:66%;">position: king</div>
+                <div class="plane-tag vector-copy" style="--x:66%; --y:52%;">same vector, shifted</div>
+              </div>
+              <div class="embedding-equation" aria-label="boy to girl vector plus king equals queen">
+                <span class="equation-term vector">boy -> girl</span>
+                <span>+</span>
+                <span class="equation-term king">king</span>
+                <span>=</span>
+                <span class="equation-term queen">queen</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Prompt recipe">
+        <div class="slide-inner">
+          <div class="eyebrow">Apply it</div>
+          <h2>Build prompts<br>that make the model do less<br>of the avoidable work</h2>
+          <p class="lead">Toggle the techniques and watch the prompt change.<br>A longer prompt isn't the goal; The desired output is.</p>
+          <div class="prompt-builder">
+            <div class="builder-controls">
+              <div class="prompt-source">
+                <div class="source-row">
+                  <select id="samplePromptSelect" aria-label="Prompt sample">
+                    <option value="patch">Patch review</option>
+                    <option value="boot">Boot log triage</option>
+                    <option value="field">Field repair note</option>
+                    <option value="risk">Weekly risk brief</option>
+                    <option value="custom">Custom prompt</option>
+                  </select>
+                  <button class="btn" id="evaluatePrompt" type="button">Evaluate</button>
+                </div>
+                <textarea id="customPromptInput" placeholder="Current prompt" disabled aria-readonly="true"></textarea>
+                <div class="eval-status" id="evalStatus"></div>
+              </div>
+              <label class="check-row">
+                <input type="checkbox" data-prompt-part="transforms" checked>
+                <span><b>Minimize transforms</b>Preserve source shape, names, and units.</span>
+              </label>
+              <label class="check-row">
+                <input type="checkbox" data-prompt-part="constraints" checked>
+                <span><b>Constraints</b>Set scope, assumptions, and stop rules.</span>
+              </label>
+              <label class="check-row">
+                <input type="checkbox" data-prompt-part="format" checked>
+                <span><b>Output format</b>Specify sections, order, and brevity.</span>
+              </label>
+              <label class="check-row">
+                <input type="checkbox" data-prompt-part="examples" checked>
+                <span><b>Warm-up examples</b>Show one compact mapping for unusual work.</span>
+              </label>
+              <label class="check-row">
+                <input type="checkbox" data-prompt-part="analogy" checked>
+                <span><b>Analogy</b>Frame the relation only when it clarifies.</span>
+              </label>
+            </div>
+            <div class="prompt-output">
+              <pre id="promptText"></pre>
+              <div class="cost-meter" aria-label="Prompt efficiency estimate">
+                <div class="meter-line">
+                  <span>Ambiguity and retry risk</span>
+                  <strong id="riskText">Low</strong>
+                </div>
+                <div class="meter-track"><div class="meter-fill" id="riskFill"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <footer class="footer">
+      <span class="hint">Use the on-screen buttons to navigate slides.<br>During games, click a box or use the left and right arrow-keys on the keyboard.</span>
+      <div class="dot-row" id="dots" aria-label="Slide navigation"></div>
+      <div class="nav-actions">
+        <button class="btn secondary" id="prevSlide" type="button">Previous</button>
+        <button class="btn" id="nextSlide" type="button">Next</button>
+      </div>
+    </footer>
+  </main>
+
+  <div class="prompt-modal hidden" id="customPromptModal" role="dialog" aria-modal="true" aria-labelledby="customPromptTitle">
+    <div class="prompt-modal-card">
+      <div class="prompt-modal-view" id="promptEvalView">
+        <div class="prompt-modal-heading">
+          <div>
+            <h3 id="customPromptTitle">Evaluate and improve your prompt</h3>
+            <p>Paste a rough prompt to check which techniques it already uses,<br>then generate a revised version you can tune with the checkboxes.</p>
+          </div>
+          <button class="text-link" id="showPromptInfo" type="button">How does this work?</button>
+        </div>
+        <div class="api-settings" aria-label="OpenAI-compatible API settings">
+          <div class="api-settings-title">
+            <b>OpenAI-compatible API</b>
+            <span>No token is embedded in this file.</span>
+          </div>
+          <div class="api-grid">
+            <label class="api-field full">
+              Endpoint URL
+              <input id="apiEndpointInput" type="url" autocomplete="off" spellcheck="false" placeholder="https://api.openai.com/v1/chat/completions">
+            </label>
+            <label class="api-field">
+              Model
+              <input id="apiModelInput" type="text" autocomplete="off" spellcheck="false" placeholder="model name">
+            </label>
+            <label class="api-field">
+              API token
+              <input id="apiTokenInput" type="password" autocomplete="off" spellcheck="false" placeholder="provider token">
+            </label>
+          </div>
+          <div class="api-note" id="apiSettingsStatus">Requests are sent from this browser; the endpoint must allow browser access.</div>
+        </div>
+        <textarea id="customPromptDraft" placeholder="Paste or type a prompt"></textarea>
+        <div class="prompt-modal-status" id="customPromptStatus"></div>
+        <div class="technique-audit hidden" id="techniqueAudit">
+          <div class="technique-audit-title">Original prompt technique check</div>
+          <div class="audit-list" id="techniqueAuditList"></div>
+        </div>
+        <div class="prompt-modal-actions">
+          <button class="btn secondary" id="cancelCustomPrompt" type="button">Cancel</button>
+          <button class="btn" id="evaluateCustomPrompt" type="button">
+            <span class="spinner hidden" id="customPromptSpinner" aria-hidden="true"></span>
+            <span id="evaluateCustomPromptLabel">Evaluate</span>
+          </button>
+        </div>
+      </div>
+      <div class="prompt-modal-view hidden" id="promptInfoView">
+        <div class="prompt-modal-heading">
+          <div>
+            <h3 id="promptInfoTitle">How prompt evaluation works</h3>
+            <p>This is the system prompt sent with your text.<br>It audits the original prompt, then rewrites every prompt section.</p>
+          </div>
+          <button class="text-link" id="backToPromptEval" type="button">Back to evaluator</button>
+        </div>
+        <div class="system-prompt-toolbar">
+          <button class="btn secondary" id="copySystemPrompt" type="button">Copy prompt</button>
+          <button class="btn" id="downloadPromptSkill" type="button">Download promptify.md</button>
+        </div>
+        <div class="prompt-modal-status" id="systemPromptStatus"></div>
+        <div class="system-prompt-render" id="systemPromptRender"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const fruits = [
+      { id: "apple", label: "apple" },
+      { id: "orange", label: "orange" },
+      { id: "lemon", label: "lemon" },
+      { id: "cherry", label: "cherry" },
+      { id: "banana", label: "banana" }
+    ];
+
+    const techniques = [
+      { mode: "text", attempt: "Attempt 1", label: "String labels" },
+      { mode: "image", attempt: "Attempt 2", label: "Image labels" },
+      { mode: "trained-text", attempt: "Attempt 3", label: "Warm-up + Play" }
+    ];
+
+    const slideEls = Array.from(document.querySelectorAll(".slide"));
+    const progressEl = document.getElementById("progress");
+    const slideCountEl = document.getElementById("slideCount");
+    const prevSlideBtn = document.getElementById("prevSlide");
+    const nextSlideBtn = document.getElementById("nextSlide");
+    const dotsEl = document.getElementById("dots");
+    let currentSlide = 0;
+    let activeGame = null;
+
+    function makeSlideSlug(title, index) {
+      const slug = String(title || "")
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      return slug || `slide-${index + 1}`;
+    }
+
+    const slideSlugs = slideEls.map((slide, index) => makeSlideSlug(slide.dataset.title, index));
+    const slugCounts = new Map();
+    slideSlugs.forEach((slug, index) => {
+      const count = slugCounts.get(slug) || 0;
+      slugCounts.set(slug, count + 1);
+      slideSlugs[index] = count ? `${slug}-${count + 1}` : slug;
+      slideEls[index].dataset.slug = slideSlugs[index];
+    });
+
+    function fruitSvg(id, className = "") {
+      const common = `class="${className}" viewBox="0 0 120 120" role="img" aria-label="${id}"`;
+      if (id === "apple") {
+        return `<svg ${common}><path d="M65 26c10-17 24-12 29-9-6 13-18 19-29 16z" fill="#2f9e44"/><path d="M59 31c-2-12 2-20 10-25" fill="none" stroke="#6b3f1d" stroke-width="7" stroke-linecap="round"/><path d="M34 43c10-12 27-8 34-2 7-6 24-10 34 2 15 18 3 55-13 67-10 8-20 1-21 1s-12 7-22-1C31 98 19 61 34 43z" fill="#d92d20"/><path d="M41 50c8-8 20-6 25 0" fill="none" stroke="#ff8a80" stroke-width="7" stroke-linecap="round"/></svg>`;
+      }
+      if (id === "orange") {
+        return `<svg ${common}><circle cx="60" cy="64" r="43" fill="#f79009"/><path d="M64 25c9-13 23-10 28-7-6 11-17 16-28 13z" fill="#2f9e44"/><path d="M42 48c11-10 26-12 42-4" fill="none" stroke="#ffc078" stroke-width="7" stroke-linecap="round"/><circle cx="42" cy="76" r="4" fill="#d46b08"/><circle cx="67" cy="88" r="3" fill="#d46b08"/><circle cx="78" cy="62" r="3" fill="#d46b08"/></svg>`;
+      }
+      if (id === "lemon") {
+        return `<svg ${common}><path d="M18 68c13-34 42-53 83-48 3 40-18 70-54 84-18-7-32-18-29-36z" fill="#f9d423"/><path d="M75 18c10-10 22-8 27-5-6 10-16 14-27 11z" fill="#2f9e44"/><path d="M33 67c15-19 35-30 62-31" fill="none" stroke="#fff176" stroke-width="8" stroke-linecap="round"/><path d="M28 80c9 10 20 16 34 17" fill="none" stroke="#d6a900" stroke-width="5" stroke-linecap="round"/></svg>`;
+      }
+      if (id === "cherry") {
+        return `<svg ${common}><path d="M58 20c-9 26-20 40-32 55" fill="none" stroke="#5f3717" stroke-width="7" stroke-linecap="round"/><path d="M58 20c14 22 23 36 34 55" fill="none" stroke="#5f3717" stroke-width="7" stroke-linecap="round"/><path d="M57 21c12-12 28-10 36-5-9 12-24 16-36 10z" fill="#2f9e44"/><circle cx="31" cy="82" r="25" fill="#c9184a"/><circle cx="88" cy="83" r="25" fill="#d6336c"/><circle cx="22" cy="73" r="7" fill="#ff8fab"/><circle cx="78" cy="74" r="7" fill="#ff8fab"/></svg>`;
+      }
+      return `<svg ${common}><path d="M26 86c24 18 62 9 83-31 4 28-19 55-48 62-23 6-42-2-50-13 8-2 14-6 15-18z" fill="#f5c542"/><path d="M18 80c27 15 59 3 79-35 7 6 10 12 12 20-23 41-64 55-91 36-7-5-8-15 0-21z" fill="#ffd43b"/><path d="M18 80c-5 5-6 12-2 18" fill="none" stroke="#6b3f1d" stroke-width="8" stroke-linecap="round"/><path d="M96 45c3-8 5-15 4-21" fill="none" stroke="#6b3f1d" stroke-width="8" stroke-linecap="round"/></svg>`;
+    }
+
+    function createDots() {
+      dotsEl.innerHTML = slideEls.map((slide, idx) => {
+        const title = slide.dataset.title || `Slide ${idx + 1}`;
+        return `<button class="dot${idx === 0 ? " active" : ""}" type="button" data-slide-dot="${idx}" aria-label="Go to slide ${idx + 1}: ${title}"></button>`;
+      }).join("");
+      dotsEl.querySelectorAll("[data-slide-dot]").forEach((dot) => {
+        dot.addEventListener("click", () => setSlide(Number(dot.dataset.slideDot)));
+      });
+    }
+
+    function slideIndexFromHash() {
+      const hash = decodeURIComponent(window.location.hash.replace(/^#/, "")).toLowerCase();
+      if (!hash) return 0;
+      const numberMatch = hash.match(/^(?:slide-?)?(\d+)$/);
+      if (numberMatch) {
+        const numericIndex = Number(numberMatch[1]) - 1;
+        if (numericIndex >= 0 && numericIndex < slideEls.length) return numericIndex;
+      }
+      const slugIndex = slideSlugs.indexOf(hash);
+      return slugIndex >= 0 ? slugIndex : 0;
+    }
+
+    function updateSlideUrl(index, replace = false) {
+      const nextHash = `#${slideSlugs[index]}`;
+      if (window.location.hash === nextHash) return;
+      const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
+      if (replace) {
+        window.history.replaceState(null, "", nextUrl);
+      } else {
+        window.history.pushState(null, "", nextUrl);
+      }
+    }
+
+    function setSlide(index, options = {}) {
+      const { updateUrl = true, replaceUrl = false } = options;
+      const bounded = Math.max(0, Math.min(slideEls.length - 1, index));
+      if (activeGame && bounded !== currentSlide) {
+        activeGame.pauseForSlideChange();
+      }
+      slideEls[currentSlide].classList.remove("active");
+      currentSlide = bounded;
+      slideEls[currentSlide].classList.add("active");
+      progressEl.style.width = `${((currentSlide + 1) / slideEls.length) * 100}%`;
+      slideCountEl.textContent = `${currentSlide + 1} / ${slideEls.length}`;
+      prevSlideBtn.disabled = currentSlide === 0;
+      nextSlideBtn.disabled = currentSlide === slideEls.length - 1;
+      Array.from(dotsEl.children).forEach((dot, idx) => {
+        const isActive = idx === currentSlide;
+        dot.classList.toggle("active", isActive);
+        dot.setAttribute("aria-current", isActive ? "step" : "false");
+      });
+      const title = slideEls[currentSlide].dataset.title;
+      document.title = `${title} - Better Prompting LLMs`;
+      if (updateUrl) updateSlideUrl(currentSlide, replaceUrl);
+      requestAnimationFrame(initScratchCards);
+    }
+
+    function nextSlide() {
+      setSlide(currentSlide + 1);
+    }
+
+    function prevSlide() {
+      setSlide(currentSlide - 1);
+    }
+
+    prevSlideBtn.addEventListener("click", prevSlide);
+    nextSlideBtn.addEventListener("click", nextSlide);
+
+    window.addEventListener("hashchange", () => {
+      setSlide(slideIndexFromHash(), { updateUrl: false });
+    });
+    window.addEventListener("popstate", () => {
+      setSlide(slideIndexFromHash(), { updateUrl: false });
+    });
+
+    function randomFruit(exceptId) {
+      const pool = fruits.filter((fruit) => fruit.id !== exceptId);
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function shuffledFruits(previousLastId = "") {
+      const order = [...fruits];
+      for (let i = order.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [order[i], order[j]] = [order[j], order[i]];
+      }
+      if (previousLastId && order.length > 1 && order[0].id === previousLastId) {
+        [order[0], order[1]] = [order[1], order[0]];
+      }
+      return order;
+    }
+
+    const audioState = {
+      ctx: null,
+      master: null,
+      active: []
+    };
+
+    function getAudioEngine() {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return null;
+      if (!audioState.ctx || audioState.ctx.state === "closed") {
+        const ctx = new AudioContext();
+        const master = ctx.createGain();
+        const limiter = ctx.createDynamicsCompressor();
+        master.gain.value = 0.9;
+        limiter.threshold.value = -14;
+        limiter.knee.value = 8;
+        limiter.ratio.value = 8;
+        limiter.attack.value = 0.003;
+        limiter.release.value = 0.12;
+        master.connect(limiter);
+        limiter.connect(ctx.destination);
+        audioState.ctx = ctx;
+        audioState.master = master;
+      }
+      if (audioState.ctx.state === "suspended") {
+        audioState.ctx.resume().catch(() => {});
+      }
+      return audioState.ctx;
+    }
+
+    function unlockAudio() {
+      const ctx = getAudioEngine();
+      if (!ctx || !audioState.master) return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.015);
+      osc.connect(gain);
+      gain.connect(audioState.master);
+      osc.start(now);
+      osc.stop(now + 0.015);
+    }
+
+    function stopActiveSound(ctx) {
+      const now = ctx.currentTime;
+      audioState.active.forEach(({ osc, gain }) => {
+        try {
+          gain.gain.cancelScheduledValues(now);
+          gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value), now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.025);
+        } catch {}
+        try {
+          osc.stop(now + 0.03);
+        } catch {}
+      });
+      audioState.active = [];
+    }
+
+    function sound(kind) {
+      const ctx = getAudioEngine();
+      if (!ctx || !audioState.master) return;
+      stopActiveSound(ctx);
+      const now = ctx.currentTime + 0.004;
+
+      const playTone = ({ frequency, startOffset = 0, duration, type, level, endFrequency = frequency }) => {
+        const start = now + startOffset;
+        const gain = ctx.createGain();
+        const osc = ctx.createOscillator();
+        const record = { osc, gain };
+        osc.type = type;
+        osc.frequency.setValueAtTime(frequency, start);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(1, endFrequency), start + duration);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(level, start + 0.008);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+        osc.connect(gain);
+        gain.connect(audioState.master);
+        osc.onended = () => {
+          audioState.active = audioState.active.filter((item) => item !== record);
+        };
+        audioState.active.push(record);
+        osc.start(start);
+        osc.stop(start + duration + 0.03);
+      };
+
+      if (kind === "success") {
+        playTone({ frequency: 1046, duration: 0.07, type: "square", level: 0.16, endFrequency: 1318 });
+        playTone({ frequency: 1568, startOffset: 0.065, duration: 0.14, type: "square", level: 0.17, endFrequency: 2637 });
+        playTone({ frequency: 3136, startOffset: 0.07, duration: 0.12, type: "triangle", level: 0.06, endFrequency: 3520 });
+      } else {
+        [0, 0.12, 0.24, 0.36, 0.48].forEach((offset, index) => {
+          const high = index % 2 === 0;
+          const start = high ? 720 : 330;
+          const end = high ? 330 : 720;
+          playTone({ frequency: start, startOffset: offset, duration: 0.105, type: "square", level: 0.2, endFrequency: end });
+          playTone({ frequency: start * 0.51, startOffset: offset, duration: 0.105, type: "sawtooth", level: 0.18, endFrequency: end * 0.51 });
+          playTone({ frequency: start * 1.03, startOffset: offset, duration: 0.105, type: "sawtooth", level: 0.1, endFrequency: end * 1.03 });
+        });
+      }
+    }
+
+    document.addEventListener("pointerdown", unlockAudio, { capture: true, passive: true });
+    document.addEventListener("keydown", unlockAudio, { capture: true });
+
+    class FruitGame {
+      constructor(root) {
+        this.root = root;
+        this.mode = root.dataset.game;
+        this.runner = root.querySelector("[data-runner]");
+        this.feedback = root.querySelector("[data-feedback]");
+        this.startOverlay = root.querySelector('[data-overlay="start"]');
+        this.trainingOverlay = root.querySelector('[data-overlay="training"]');
+        this.readyOverlay = root.querySelector('[data-overlay="ready"]');
+        this.resultOverlay = root.querySelector('[data-overlay="result"]');
+        this.countdownOverlay = this.createCountdownOverlay();
+        this.countdownNumber = this.countdownOverlay.querySelector("[data-countdown-number]");
+        this.trainingPair = root.querySelector("[data-training-pair]");
+        this.trainingTimer = root.querySelector("[data-training-timer]");
+        this.resultEl = root.querySelector("[data-results]");
+        this.boxes = {
+          left: root.querySelector('[data-box="left"]'),
+          right: root.querySelector('[data-box="right"]')
+        };
+        this.boxContent = {
+          left: root.querySelector('[data-box-content="left"]'),
+          right: root.querySelector('[data-box-content="right"]')
+        };
+        this.stats = {
+          count: root.querySelector('[data-stat="count"]'),
+          correct: root.querySelector('[data-stat="correct"]'),
+          avgAll: root.querySelector('[data-stat="avgAll"]'),
+          avgCorrect: root.querySelector('[data-stat="avgCorrect"]')
+        };
+        this.total = 20;
+        this.runMs = 1450;
+        this.running = false;
+        this.index = 0;
+        this.correct = 0;
+        this.reactions = [];
+        this.correctReactions = [];
+        this.current = null;
+        this.deadlineTimer = null;
+        this.trainingTimers = [];
+        this.countdownTimers = [];
+        this.bind();
+        this.renderIdleLabels();
+      }
+
+      createCountdownOverlay() {
+        const overlay = document.createElement("div");
+        overlay.className = "overlay hidden countdown-overlay";
+        overlay.dataset.overlay = "countdown";
+        overlay.innerHTML = `
+          <div class="overlay-panel">
+            <div class="countdown-number" data-countdown-number>3</div>
+          </div>`;
+        this.root.querySelector(".game-stage").appendChild(overlay);
+        return overlay;
+      }
+
+      bind() {
+        this.root.querySelectorAll('[data-action="start"]').forEach((button) => {
+          button.addEventListener("click", () => this.start());
+        });
+        this.root.querySelectorAll('[data-action="train"]').forEach((button) => {
+          button.addEventListener("click", () => this.startTraining());
+        });
+        this.root.querySelectorAll('[data-action="next-slide"]').forEach((button) => {
+          button.addEventListener("click", nextSlide);
+        });
+        Object.entries(this.boxes).forEach(([side, box]) => {
+          box.setAttribute("role", "button");
+          box.setAttribute("aria-label", `Sort fruit to the ${side} box`);
+          box.addEventListener("pointerdown", (event) => {
+            event.preventDefault();
+            this.answer(side);
+          });
+        });
+      }
+
+      renderIdleLabels() {
+        const left = fruits[0];
+        const right = fruits[1];
+        this.renderBox("left", left);
+        this.renderBox("right", right);
+      }
+
+      renderBox(side, fruit) {
+        if (this.mode === "image") {
+          this.boxContent[side].className = "box-image";
+          this.boxContent[side].innerHTML = fruitSvg(fruit.id);
+        } else {
+          this.boxContent[side].className = "box-label";
+          this.boxContent[side].textContent = fruit.label;
+        }
+      }
+
+      reset() {
+        clearTimeout(this.deadlineTimer);
+        this.clearCountdown();
+        this.trainingTimers.forEach((timer) => clearTimeout(timer));
+        this.trainingTimers = [];
+        this.running = false;
+        this.index = 0;
+        this.correct = 0;
+        this.reactions = [];
+        this.correctReactions = [];
+        this.current = null;
+        this.runner.classList.remove("moving");
+        this.runner.innerHTML = "";
+        this.updateStats();
+      }
+
+      clearCountdown() {
+        this.countdownTimers.forEach((timer) => clearTimeout(timer));
+        this.countdownTimers = [];
+      }
+
+      start() {
+        this.reset();
+        activeGame = this;
+        this.hideAllOverlays();
+        this.startCountdown();
+      }
+
+      startCountdown() {
+        const steps = ["3", "2", "1"];
+        let stepIndex = 0;
+        this.countdownOverlay.classList.remove("hidden");
+        const showStep = () => {
+          if (activeGame !== this) return;
+          const value = steps[stepIndex];
+          if (!value) {
+            this.hideAllOverlays();
+            this.running = true;
+            this.nextFruit();
+            return;
+          }
+          this.countdownNumber.textContent = value;
+          this.countdownNumber.classList.remove("pulse");
+          void this.countdownNumber.offsetWidth;
+          this.countdownNumber.classList.add("pulse");
+          stepIndex += 1;
+          this.countdownTimers.push(setTimeout(showStep, 1000));
+        };
+        showStep();
+      }
+
+      startTraining() {
+        this.reset();
+        activeGame = this;
+        this.hideAllOverlays();
+        this.trainingOverlay.classList.remove("hidden");
+        const durationMs = 30000;
+        const pairMs = 1400;
+        const totalTrainingPairs = Math.ceil(durationMs / pairMs);
+        const fasterDelayMid = Math.max(0, totalTrainingPairs - 10);
+        const fasterDelayStart = Math.max(0, totalTrainingPairs - 5);
+        const start = performance.now();
+        let trainingOrder = shuffledFruits();
+        let pairIndex = 0;
+        let shownPairs = 0;
+        const showPair = () => {
+          if (pairIndex >= trainingOrder.length) {
+            trainingOrder = shuffledFruits(trainingOrder[trainingOrder.length - 1].id);
+            pairIndex = 0;
+          }
+          const fruit = trainingOrder[pairIndex];
+          const wordDelay = shownPairs >= fasterDelayStart ? 100 : shownPairs >= fasterDelayMid ? 150 : 250;
+          this.trainingPair.innerHTML = `
+            <div class="training-pair">
+              <div class="training-img">${fruitSvg(fruit.id)}</div>
+              <div class="training-word">${fruit.label}</div>
+            </div>`;
+          const wordEl = this.trainingPair.querySelector(".training-word");
+          this.trainingTimers.push(setTimeout(() => {
+            if (wordEl) wordEl.classList.add("show");
+          }, wordDelay));
+          pairIndex += 1;
+          shownPairs += 1;
+        };
+        const tick = () => {
+          const elapsed = performance.now() - start;
+          const remaining = Math.max(0, durationMs - elapsed);
+          this.trainingTimer.textContent = `${(remaining / 1000).toFixed(1)}s`;
+          if (remaining <= 0) {
+            this.showTrainingReady();
+            return;
+          }
+          this.trainingTimers.push(setTimeout(tick, 100));
+        };
+        showPair();
+        const rotate = () => {
+          if (this.trainingOverlay.classList.contains("hidden")) return;
+          showPair();
+          this.trainingTimers.push(setTimeout(rotate, pairMs));
+        };
+        this.trainingTimers.push(setTimeout(rotate, pairMs));
+        tick();
+      }
+
+      showTrainingReady() {
+        this.trainingTimers.forEach((timer) => clearTimeout(timer));
+        this.trainingTimers = [];
+        this.hideAllOverlays();
+        this.readyOverlay.classList.remove("hidden");
+        if (activeGame === this) activeGame = null;
+      }
+
+      hideAllOverlays() {
+        [this.startOverlay, this.trainingOverlay, this.readyOverlay, this.resultOverlay, this.countdownOverlay].forEach((overlay) => {
+          if (overlay) overlay.classList.add("hidden");
+        });
+      }
+
+      pauseForSlideChange() {
+        if (!this.root.closest(".slide").classList.contains("active")) return;
+        clearTimeout(this.deadlineTimer);
+        this.clearCountdown();
+        this.trainingTimers.forEach((timer) => clearTimeout(timer));
+        this.trainingTimers = [];
+        if (this.running) {
+          this.running = false;
+          this.runner.classList.remove("moving");
+        }
+        this.hideAllOverlays();
+        this.startOverlay.classList.remove("hidden");
+        if (activeGame === this) activeGame = null;
+      }
+
+      nextFruit() {
+        if (!this.running) return;
+        if (this.index >= this.total) {
+          this.finish();
+          return;
+        }
+        this.index += 1;
+        const fruit = fruits[Math.floor(Math.random() * fruits.length)];
+        const distractor = randomFruit(fruit.id);
+        const correctSide = Math.random() > 0.5 ? "left" : "right";
+        const wrongSide = correctSide === "left" ? "right" : "left";
+        this.current = {
+          fruit,
+          correctSide,
+          startedAt: performance.now(),
+          answered: false
+        };
+        this.renderBox(correctSide, fruit);
+        this.renderBox(wrongSide, distractor);
+        this.runner.style.setProperty("--run-ms", `${this.runMs}ms`);
+        this.runner.classList.remove("moving");
+        this.runner.innerHTML = fruitSvg(fruit.id);
+        void this.runner.offsetWidth;
+        this.runner.classList.add("moving");
+        this.updateStats();
+        this.deadlineTimer = setTimeout(() => this.miss(), this.runMs);
+      }
+
+      answer(side) {
+        if (!this.running || !this.current || this.current.answered) return;
+        this.current.answered = true;
+        clearTimeout(this.deadlineTimer);
+        const reaction = performance.now() - this.current.startedAt;
+        this.reactions.push(reaction);
+        const isCorrect = side === this.current.correctSide;
+        if (isCorrect) {
+          this.correct += 1;
+          this.correctReactions.push(reaction);
+        }
+        this.showFeedback(isCorrect ? "Correct" : "Wrong", isCorrect);
+        sound(isCorrect ? "success" : "failure");
+        this.runner.classList.remove("moving");
+        setTimeout(() => this.nextFruit(), 260);
+        this.updateStats();
+      }
+
+      miss() {
+        if (!this.running || !this.current || this.current.answered) return;
+        this.current.answered = true;
+        this.reactions.push(this.runMs);
+        this.showFeedback("Missed", false);
+        sound("failure");
+        this.runner.classList.remove("moving");
+        setTimeout(() => this.nextFruit(), 280);
+        this.updateStats();
+      }
+
+      showFeedback(text, good) {
+        this.feedback.textContent = text;
+        this.feedback.className = `feedback show ${good ? "good" : "bad"}`;
+        setTimeout(() => this.feedback.classList.remove("show"), 220);
+      }
+
+      avg(list) {
+        if (!list.length) return 0;
+        return list.reduce((sum, value) => sum + value, 0) / list.length / 1000;
+      }
+
+      updateStats() {
+        this.stats.count.textContent = `${Math.min(this.index, this.total)} / ${this.total}`;
+        this.stats.correct.textContent = `${this.correct}`;
+        this.stats.avgAll.textContent = `${this.avg(this.reactions).toFixed(2)}s`;
+        this.stats.avgCorrect.textContent = `${this.avg(this.correctReactions).toFixed(2)}s`;
+      }
+
+      finish() {
+        this.running = false;
+        clearTimeout(this.deadlineTimer);
+        this.runner.innerHTML = "";
+        const score = {
+          correct: this.correct,
+          avgAll: this.avg(this.reactions),
+          avgCorrect: this.avg(this.correctReactions)
+        };
+        this.saveCurrentScore(score);
+        this.resultEl.innerHTML = `
+          <div class="score-item"><small>Correct choices</small><b>${score.correct} / ${this.total}</b></div>
+          <div class="score-item"><small>Average reaction time</small><b>${score.avgAll.toFixed(2)}s</b></div>
+          <div class="score-item"><small>Average correct reaction time</small><b>${score.avgCorrect.toFixed(2)}s</b></div>
+          ${this.renderScoreComparison()}`;
+        this.hideAllOverlays();
+        this.resultOverlay.classList.remove("hidden");
+        if (activeGame === this) activeGame = null;
+        this.updateStats();
+      }
+
+      storageKey(mode = this.mode) {
+        return `fruit-sort-current-${mode}`;
+      }
+
+      readCurrentScore(mode) {
+        try {
+          return JSON.parse(localStorage.getItem(this.storageKey(mode)) || "null");
+        } catch {
+          return null;
+        }
+      }
+
+      renderScoreComparison() {
+        const currentIndex = techniques.findIndex((technique) => technique.mode === this.mode);
+        const rows = techniques.slice(0, currentIndex + 1).map((technique) => {
+          const currentScore = this.readCurrentScore(technique.mode);
+          const currentClass = technique.mode === this.mode ? ' class="current"' : "";
+          if (!currentScore) {
+            return `
+              <tr${currentClass}>
+                <th>${technique.attempt}<span>${technique.label}</span></th>
+                <td colspan="3">Not played yet</td>
+              </tr>`;
+          }
+          return `
+            <tr${currentClass}>
+              <th>${technique.attempt}<span>${technique.label}</span></th>
+              <td>${currentScore.correct} / ${this.total}</td>
+              <td>${currentScore.avgAll.toFixed(2)}s</td>
+              <td>${currentScore.avgCorrect.toFixed(2)}s</td>
+            </tr>`;
+        }).join("");
+
+        return `
+          <div class="score-compare">
+            <div class="score-compare-title">Current scores by technique</div>
+            <table class="score-table">
+              <thead>
+                <tr>
+                  <th>Technique</th>
+                  <td>Correct</td>
+                  <td>Avg all</td>
+                  <td>Avg correct</td>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`;
+      }
+
+      saveCurrentScore(score) {
+        localStorage.setItem(this.storageKey(), JSON.stringify(score));
+      }
+    }
+
+    document.querySelectorAll("[data-game]").forEach((root) => new FruitGame(root));
+
+    document.addEventListener("keydown", (event) => {
+      if (!activeGame?.running) return;
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        activeGame.answer("left");
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        activeGame.answer("right");
+      }
+    });
+
+    function renderMiniFruit() {
+      document.querySelectorAll("[data-mini-fruit]").forEach((el) => {
+        el.innerHTML = fruitSvg(el.dataset.miniFruit);
+      });
+    }
+
+    function drawScratchLayer(layer) {
+      const card = layer.closest("[data-scratch-card]");
+      if (!card || card.classList.contains("revealed")) return false;
+      const rect = layer.getBoundingClientRect();
+      if (rect.width < 2 || rect.height < 2) return false;
+
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const pixelWidth = Math.round(rect.width * dpr);
+      const pixelHeight = Math.round(rect.height * dpr);
+      if (
+        layer.dataset.ready === "true" &&
+        layer.dataset.pixelWidth === String(pixelWidth) &&
+        layer.dataset.pixelHeight === String(pixelHeight)
+      ) {
+        return true;
+      }
+
+      layer.width = pixelWidth;
+      layer.height = pixelHeight;
+      layer.dataset.ready = "true";
+      layer.dataset.pixelWidth = String(pixelWidth);
+      layer.dataset.pixelHeight = String(pixelHeight);
+      layer.style.display = "block";
+
+      const ctx = layer.getContext("2d");
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+
+      const cover = ctx.createLinearGradient(0, 0, rect.width, rect.height);
+      cover.addColorStop(0, "#edf2f7");
+      cover.addColorStop(0.52, "#b9c2d0");
+      cover.addColorStop(1, "#8993a5");
+      ctx.fillStyle = cover;
+      ctx.fillRect(0, 0, rect.width, rect.height);
+
+      ctx.globalAlpha = 0.42;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 4;
+      for (let x = -rect.height; x < rect.width; x += 28) {
+        ctx.beginPath();
+        ctx.moveTo(x, rect.height);
+        ctx.lineTo(x + rect.height, 0);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      ctx.fillStyle = "#122033";
+      ctx.font = `900 ${Math.min(56, Math.max(34, rect.height * 0.45))}px Inter, system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("??", rect.width / 2, rect.height / 2);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      return true;
+    }
+
+    function scratchLayerAt(layer, event) {
+      if (!drawScratchLayer(layer)) return;
+      const rect = layer.getBoundingClientRect();
+      const scaleX = layer.width / rect.width;
+      const scaleY = layer.height / rect.height;
+      const x = (event.clientX - rect.left) * scaleX;
+      const y = (event.clientY - rect.top) * scaleY;
+      const radius = Math.max(22, Math.min(rect.width, rect.height) * 0.2) * Math.max(scaleX, scaleY);
+      const ctx = layer.getContext("2d");
+
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      if (scratchRevealRatio(layer) > 0.5) {
+        const card = layer.closest("[data-scratch-card]");
+        card.classList.add("revealed");
+        card.closest(".coin-cursor-slide")?.classList.add("coin-cursor-spent");
+        layer.dataset.revealed = "true";
+      }
+    }
+
+    function scratchRevealRatio(layer) {
+      const ctx = layer.getContext("2d");
+      const pixels = ctx.getImageData(0, 0, layer.width, layer.height).data;
+      let transparent = 0;
+      let sampled = 0;
+      for (let i = 3; i < pixels.length; i += 32) {
+        sampled += 1;
+        if (pixels[i] < 40) transparent += 1;
+      }
+      return sampled ? transparent / sampled : 0;
+    }
+
+    function bindScratchLayer(layer) {
+      if (layer.dataset.bound === "true") return;
+      layer.dataset.bound = "true";
+      layer.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        layer.dataset.scratching = "true";
+        layer.setPointerCapture(event.pointerId);
+        scratchLayerAt(layer, event);
+      });
+      layer.addEventListener("pointermove", (event) => {
+        if (layer.dataset.scratching !== "true") return;
+        event.preventDefault();
+        scratchLayerAt(layer, event);
+      });
+      ["pointerup", "pointercancel", "pointerleave"].forEach((eventName) => {
+        layer.addEventListener(eventName, () => {
+          layer.dataset.scratching = "false";
+        });
+      });
+    }
+
+    function initScratchCards() {
+      document.querySelectorAll("[data-scratch-card]").forEach((card) => {
+        const layer = card.querySelector("[data-scratch-layer]");
+        if (!layer) return;
+        bindScratchLayer(layer);
+        drawScratchLayer(layer);
+      });
+    }
+
+    window.addEventListener("resize", () => {
+      requestAnimationFrame(initScratchCards);
+    });
+
+    const DEFAULT_API_ENDPOINT = "https://api.openai.com/v1/chat/completions";
+    const LLM_TEMPERATURE = 1;
+    const LLM_SYSTEM_PROMPT = `Evaluate a user's rough prompt and produce a revised high-accuracy prompt.
+
+Use three passes before answering.
+
+Pass 1: identify the most appropriate profile from the user's prompt and desired output, e.g. code_generation, calculation_script, code_review, log_triage, field_troubleshooting, data_transform, operations_digest, decision_brief, incident_triage, writing, research, or general_task.
+
+Pass 2: evaluate the original user prompt for five prompting techniques. Set technique_presence booleans based only on what the original user prompt already contains:
+- transforms: true when the prompt asks the model to preserve source shape, names, units, identifiers, order, structure, or otherwise minimize representation changes.
+- constraints: true when the prompt gives scope, assumptions, success criteria, boundaries, stop rules, or conditions for rejecting/deferring an answer.
+- format: true when the prompt specifies an output shape, sections, order, schema, table, bullets, or other verifiable return format.
+- examples: true only when the original prompt provides one or more concrete examples, such as an input -> output mapping or sample case. Do not mark true merely because the prompt asks the model to include examples.
+- analogy: true only when the original prompt provides an analogy or comparison that frames how to reason. Do not mark true merely because the prompt asks the model to create an analogy.
+
+Pass 3: rewrite and refine every prompt_parts section regardless of which techniques were already present. Preserve the actual task type. If the user asks to write code, generate a code-generation prompt, not a review/summarization prompt. If the user asks for a calculation script, specify inputs, formula or algorithm, edge cases, and runnable output.
+
+Correct obvious typos.
+
+Choose an output format that makes the result verifiable.
+
+Always provide a compact warm-up example in prompt_parts.examples.
+
+Always provide a context-relevant analogy in prompt_parts.analogy; never use fruit/conveyor analogies unless the task is about fruit sorting.
+
+Use true or false for every technique_presence value, not quoted strings.
+
+Return JSON only with this shape:
+{
+  "profile": "short_profile_name",
+  "profile_reason": "one short reason",
+  "technique_presence": {
+    "transforms": boolean,
+    "constraints": boolean,
+    "format": boolean,
+    "examples": boolean,
+    "analogy": boolean
+  },
+  "prompt_parts": {
+    "task": "1-3 direct lines preserving the task",
+    "transforms": "1-3 short lines",
+    "constraints": "1-3 short lines",
+    "format": "compact output shape",
+    "examples": "one compact input -> output mapping",
+    "analogy": "two or three short lines, no heading"
+  }
+}
+
+Keep the complete composed prompt under 180 words.`;
+    const promptText = document.getElementById("promptText");
+    const riskFill = document.getElementById("riskFill");
+    const riskText = document.getElementById("riskText");
+    const samplePromptSelect = document.getElementById("samplePromptSelect");
+    const customPromptInput = document.getElementById("customPromptInput");
+    const evaluatePromptBtn = document.getElementById("evaluatePrompt");
+    const evalStatus = document.getElementById("evalStatus");
+    const customPromptModal = document.getElementById("customPromptModal");
+    const customPromptDraft = document.getElementById("customPromptDraft");
+    const customPromptStatus = document.getElementById("customPromptStatus");
+    const apiEndpointInput = document.getElementById("apiEndpointInput");
+    const apiModelInput = document.getElementById("apiModelInput");
+    const apiTokenInput = document.getElementById("apiTokenInput");
+    const apiSettingsStatus = document.getElementById("apiSettingsStatus");
+    const cancelCustomPromptBtn = document.getElementById("cancelCustomPrompt");
+    const evaluateCustomPromptBtn = document.getElementById("evaluateCustomPrompt");
+    const evaluateCustomPromptLabel = document.getElementById("evaluateCustomPromptLabel");
+    const customPromptSpinner = document.getElementById("customPromptSpinner");
+    const promptEvalView = document.getElementById("promptEvalView");
+    const promptInfoView = document.getElementById("promptInfoView");
+    const showPromptInfoBtn = document.getElementById("showPromptInfo");
+    const backToPromptEvalBtn = document.getElementById("backToPromptEval");
+    const copySystemPromptBtn = document.getElementById("copySystemPrompt");
+    const downloadPromptSkillBtn = document.getElementById("downloadPromptSkill");
+    const systemPromptRender = document.getElementById("systemPromptRender");
+    const systemPromptStatus = document.getElementById("systemPromptStatus");
+    const techniqueAudit = document.getElementById("techniqueAudit");
+    const techniqueAuditList = document.getElementById("techniqueAuditList");
+    const techniqueKeys = ["transforms", "constraints", "format", "examples", "analogy"];
+    const techniqueLabels = {
+      transforms: "Minimize transforms",
+      constraints: "Constraints",
+      format: "Output format",
+      examples: "Warm-up examples",
+      analogy: "Analogy"
+    };
+    const evaluationPhrases = [
+      "Identifying prompt profile",
+      "Checking representation fit",
+      "Adding context-specific details",
+      "Looking for useful boundaries",
+      "Checking output shape",
+      "Scanning for warm-up examples",
+      "Synthesizing better prompt",
+      "Testing analogy fit",
+      "Estimating retry risk",
+      "Polishing prompts",
+      "Untangling syntax",
+      "Juggling tokens",
+      "Balancing constraints",
+      "Sketching examples"
+    ];
+    const EVALUATION_TIMEOUT_MS = 60000;
+    const EVALUATION_DOT_MS = 300;
+
+    const defaultTechniqueLayers = {
+      transforms: "Minimize transforms:\nUse the input as-is.\nPreserve names, units, identifiers, order, and structure.\nConvert only when the requested output requires it.",
+      constraints: "Constraints and success criteria:\nSeparate facts from assumptions.\nStay inside the supplied scope.\nPrefer the smallest useful next action.",
+      format: "Return format:\n- Answer\n- Evidence\n- Next action\n- Open risk",
+      examples: "Warm-up example:\nInput: vague failure note\nOutput: symptoms, missing evidence, first diagnostic check.",
+      analogy: "Analogy:\nThink of this like a design review:\nkeep source facts visible\nthen choose the shortest clear path to the requested output."
+    };
+
+    const promptSamples = {
+      patch: {
+        base: "Review the supplied diff for concurrency bugs in the retry path.\nFind issues that can change runtime behavior under parallel requests.",
+        selected: { transforms: true, constraints: true, format: true, examples: true, analogy: true },
+        layers: {
+          transforms: "Minimize transforms:\nReason directly over the diff.\nPreserve function names, call order, lock ownership, and changed-line context.",
+          constraints: "Constraints and success criteria:\nIgnore style-only feedback.\nReport only plausible runtime bugs.\nIf evidence is insufficient, say what is missing.",
+          format: "Return format:\n- Bug or no bug\n- Evidence from the diff\n- Failing interleaving\n- Minimal fix\n- Missing test",
+          examples: "Warm-up example:\nStale state captured in a retry callback -> name the callback, the stale value, and the conflicting request path.",
+          analogy: "Analogy:\nThink of this like two shoppers buying the last item:\ntrack who sees it in stock\nthen flag the interleaving where both purchases succeed."
+        }
+      },
+      boot: {
+        base: "Analyze the supplied boot log.\nExplain why the device never reaches the application prompt.",
+        selected: { transforms: true, constraints: true, format: true, examples: true, analogy: true },
+        layers: {
+          transforms: "Minimize transforms:\nRead chronologically.\nKeep timestamps, service names, device names, and exact error strings.",
+          constraints: "Constraints and success criteria:\nDo not infer hardware failure without log evidence.\nSeparate bootloader, kernel, driver, and service-layer causes.",
+          format: "Return format:\n- Most likely stop point\n- Evidence lines\n- Why it blocks the prompt\n- Two next checks\n- Recovery action",
+          examples: "Warm-up example:\nService starts but no prompt appears -> check console, shell launch, and application start order before replacing hardware.",
+          analogy: "Analogy:\nThink of this like following a package shipment:\nuse the last confirmed scan\nthen identify the missing next handoff."
+        }
+      },
+      field: {
+        base: "Create a field troubleshooting note for intermittent sensor readings after a firmware update.\nAssume no lab equipment is available.",
+        selected: { transforms: true, constraints: true, format: true, examples: true, analogy: true },
+        layers: {
+          transforms: "Minimize transforms:\nUse only observations from screen, LEDs, cables, connectors, logs, or service menu.\nAvoid oscilloscope or lab-only checks.",
+          constraints: "Constraints and success criteria:\nNo soldering.\nNo firmware rollback unless earlier checks fail.\nStop and escalate on over-temperature or damage.",
+          format: "Return format:\n- Safety stop\n- Quick visual checks\n- Device-menu checks\n- Pass/fail meaning\n- Escalation trigger",
+          examples: "Warm-up example:\nGood: reseat connector J4 and confirm LED changes amber -> green.\nBad: inspect the I2C waveform.",
+          analogy: "Analogy:\nThink of this like fixing a flickering desk lamp:\ncheck the switch, plug, cable, and bulb first\nthen stop if there is heat or visible damage."
+        }
+      },
+      risk: {
+        base: "Turn the supplied project notes into a decision brief.\nRelease date is fixed.\nTwo features are late.\nSupport load is rising.",
+        selected: { transforms: true, constraints: true, format: true, examples: true, analogy: true },
+        layers: {
+          transforms: "Minimize transforms:\nUse only facts in the notes.\nPreserve dates, owners, dependencies, and stated risks.\nDo not invent staffing or milestones.",
+          constraints: "Constraints and success criteria:\nAssume the date cannot move.\nPrefer choices that reduce support load without hiding product risk.",
+          format: "Return format:\n- Decision needed\n- Options\n- Recommendation\n- Tradeoff\n- Risk if ignored",
+          examples: "Warm-up example:\nLate feature + rising support load -> recommend scope reduction before adding process overhead.",
+          analogy: "Analogy:\nThink of this like packing a truck that leaves tonight:\nload the must-have items first\nthen leave lower-value cargo behind instead of delaying the trip."
+        }
+      }
+    };
+
+    let activePrompt = makePromptState("patch");
+    let previousPromptSelectValue = "patch";
+    let evaluationPhraseTimer = null;
+    let modalHasEvaluation = false;
+
+    apiEndpointInput.value = DEFAULT_API_ENDPOINT;
+
+    function makePromptState(key) {
+      const sample = promptSamples[key] || promptSamples.patch;
+      return {
+        key,
+        original: sample.base,
+        base: sample.base,
+        layers: sample.layers || defaultTechniqueLayers,
+        selected: { ...sample.selected }
+      };
+    }
+
+    function allTechniqueStates() {
+      return Object.fromEntries(techniqueKeys.map((key) => [key, true]));
+    }
+
+    function requirePromptPart(parts, key) {
+      const value = parts?.[key];
+      if (typeof value !== "string" || !value.trim()) {
+        throw new Error(`LLM response missing prompt_parts.${key}`);
+      }
+      return cleanPromptLayer(value);
+    }
+
+    function requireAnalogyPart(parts, key, prompt) {
+      const cleaned = sanitizeAnalogyText(requirePromptPart(parts, key), prompt);
+      if (!cleaned) {
+        throw new Error(`LLM response included an invalid prompt_parts.${key}`);
+      }
+      return cleaned;
+    }
+
+    function normalizePromptParts(raw, prompt) {
+      const source = raw?.prompt_parts || raw?.promptParts;
+      if (!source || typeof source !== "object") {
+        throw new Error("LLM response missing prompt_parts");
+      }
+      return {
+        task: requirePromptPart(source, "task"),
+        transforms: requirePromptPart(source, "transforms"),
+        constraints: requirePromptPart(source, "constraints"),
+        format: requirePromptPart(source, "format"),
+        examples: requirePromptPart(source, "examples"),
+        analogy: requireAnalogyPart(source, "analogy", prompt)
+      };
+    }
+
+    function sanitizeAnalogyText(analogyText, prompt) {
+      const cleaned = cleanPromptLayer(analogyText);
+      if (!cleaned) return "";
+      const promptIsFruitTask = /\b(fruit|apple|orange|lemon|cherry|banana|conveyor)\b/i.test(prompt);
+      const analogyUsesFruit = /\b(fruit|apple|orange|lemon|cherry|banana|conveyor)\b/i.test(cleaned);
+      return !promptIsFruitTask && analogyUsesFruit ? "" : cleaned;
+    }
+
+    function makeCustomPromptState(text, promptParts = null, selected = null) {
+      const base = text || "Describe the task you want the LLM to perform.";
+      if (!promptParts) {
+        return {
+          key: "custom",
+          original: base,
+          base,
+          layers: { ...defaultTechniqueLayers, analogy: "" },
+          selected: selected || getTechniqueStates()
+        };
+      }
+      const parts = promptParts;
+      return {
+        key: "custom",
+        original: base,
+        base: cleanPromptLayer(parts.task || base),
+        layers: {
+          ...defaultTechniqueLayers,
+          transforms: `Minimize transforms:\n${cleanPromptLayer(parts.transforms)}`,
+          constraints: `Constraints and success criteria:\n${cleanPromptLayer(parts.constraints)}`,
+          format: `Return format:\n${cleanPromptLayer(parts.format)}`,
+          examples: parts.examples ? `Warm-up example:\n${cleanPromptLayer(parts.examples)}` : "",
+          analogy: parts.analogy ? `Analogy:\n${sanitizeAnalogyText(parts.analogy, base)}` : ""
+        },
+        selected: selected || allTechniqueStates()
+      };
+    }
+
+    function getTechniqueInputs() {
+      return Array.from(document.querySelectorAll("[data-prompt-part]"));
+    }
+
+    function getTechniqueStates() {
+      return Object.fromEntries(getTechniqueInputs().map((input) => [input.dataset.promptPart, input.checked]));
+    }
+
+    function setTechniqueStates(states) {
+      getTechniqueInputs().forEach((input) => {
+        input.checked = Boolean(states[input.dataset.promptPart]);
+      });
+    }
+
+    function cleanPromptLayer(text) {
+      return String(text || "")
+        .replace(/^(Minimize transforms|Constraints and success criteria|Return format|Warm-up example|Analogy):\n?/i, "")
+        .trim();
+    }
+
+    function renderPromptWorkbench() {
+      const states = getTechniqueStates();
+      const sections = [activePrompt.base.trim()];
+      techniqueKeys.forEach((key) => {
+        if (states[key]) {
+          sections.push(cleanPromptLayer(activePrompt.layers[key] || defaultTechniqueLayers[key]));
+        }
+      });
+
+      promptText.textContent = sections.filter(Boolean).join("\n\n");
+      const selectedCount = techniqueKeys.filter((key) => states[key]).length;
+      const risk = Math.max(14, Math.min(92, 92 - selectedCount * 15));
+      riskFill.style.width = `${risk}%`;
+      riskText.textContent = risk < 35 ? "Low" : risk < 65 ? "Medium" : "High";
+    }
+
+    function loadPromptSample(key) {
+      activePrompt = key === "custom" ? makeCustomPromptState(customPromptInput.value.trim()) : makePromptState(key);
+      customPromptInput.value = activePrompt.original || activePrompt.base;
+      setTechniqueStates(activePrompt.selected);
+      evalStatus.textContent = "";
+      renderPromptWorkbench();
+    }
+
+    function normalizeTechniquePresence(raw) {
+      const source = raw?.technique_presence || raw?.techniquePresence || raw?.techniques || {};
+      if (!source || typeof source !== "object") {
+        throw new Error("LLM response missing technique_presence");
+      }
+      return {
+        transforms: requireTechniqueBoolean(source, ["transforms", "minimize_transforms", "minimise_transforms"]),
+        constraints: requireTechniqueBoolean(source, ["constraints", "success_criteria"]),
+        format: requireTechniqueBoolean(source, ["format", "output_format"]),
+        examples: requireTechniqueBoolean(source, ["examples", "warmup_examples", "warm_up_examples"]),
+        analogy: requireTechniqueBoolean(source, ["analogy", "analogies"])
+      };
+    }
+
+    function requireTechniqueBoolean(source, keys) {
+      const key = keys.find((candidate) => candidate in source);
+      if (!key || typeof source[key] !== "boolean") {
+        throw new Error(`LLM response missing technique_presence.${keys[0]}`);
+      }
+      return source[key];
+    }
+
+    function extractJson(text) {
+      const trimmed = text.trim();
+      if (trimmed.startsWith("{")) return trimmed;
+      const match = trimmed.match(/\{[\s\S]*\}/);
+      return match ? match[0] : "{}";
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function systemPromptMarkdown() {
+      const prompt = LLM_SYSTEM_PROMPT.trim();
+      const marker = "Return JSON only with this shape:";
+      const markerIndex = prompt.indexOf(marker);
+      const jsonStart = prompt.indexOf("{", markerIndex);
+      const outroMarker = "\n\nKeep the complete composed prompt under 180 words.";
+      const outroIndex = prompt.indexOf(outroMarker, jsonStart);
+
+      if (markerIndex < 0 || jsonStart < 0 || outroIndex < 0) {
+        return prompt;
+      }
+
+      const intro = prompt.slice(0, markerIndex).trim();
+      const jsonSchema = prompt.slice(jsonStart, outroIndex).trim();
+      const outro = prompt.slice(outroIndex).trim();
+      let prettySchema = jsonSchema;
+
+      try {
+        const parsableSchema = jsonSchema.replace(/:\s*boolean/g, ': "boolean"');
+        prettySchema = JSON.stringify(JSON.parse(parsableSchema), null, 2);
+      } catch (error) {
+        // Keep the raw schema if the prompt shape changes.
+      }
+
+      return `${intro}\n\n${marker}\n\n\`\`\`json\n${prettySchema}\n\`\`\`\n\n${outro}`;
+    }
+
+    function promptSkillMarkdown() {
+      return `# promptify\n\n${systemPromptMarkdown()}\n`;
+    }
+
+    function renderMarkdown(markdown) {
+      const lines = markdown.split(/\r?\n/);
+      let html = "";
+      let paragraph = [];
+      let list = [];
+      let code = [];
+      let inCode = false;
+
+      const flushParagraph = () => {
+        if (!paragraph.length) return;
+        html += `<p>${escapeHtml(paragraph.join(" "))}</p>`;
+        paragraph = [];
+      };
+
+      const flushList = () => {
+        if (!list.length) return;
+        html += `<ul>${list.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+        list = [];
+      };
+
+      lines.forEach((line) => {
+        if (line.startsWith("```")) {
+          if (inCode) {
+            html += `<pre><code>${escapeHtml(code.join("\n"))}</code></pre>`;
+            code = [];
+            inCode = false;
+            return;
+          }
+          flushParagraph();
+          flushList();
+          inCode = true;
+          return;
+        }
+
+        if (inCode) {
+          code.push(line);
+          return;
+        }
+
+        if (!line.trim()) {
+          flushParagraph();
+          flushList();
+          return;
+        }
+
+        if (line.startsWith("- ")) {
+          flushParagraph();
+          list.push(line.slice(2).trim());
+          return;
+        }
+
+        flushList();
+        paragraph.push(line.trim());
+      });
+
+      if (inCode) {
+        html += `<pre><code>${escapeHtml(code.join("\n"))}</code></pre>`;
+      }
+      flushParagraph();
+      flushList();
+      return html;
+    }
+
+    async function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+    }
+
+    function downloadTextFile(filename, text) {
+      const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function showPromptInfoView() {
+      systemPromptRender.innerHTML = renderMarkdown(systemPromptMarkdown());
+      systemPromptStatus.textContent = "";
+      customPromptModal.setAttribute("aria-labelledby", "promptInfoTitle");
+      promptEvalView.classList.add("hidden");
+      promptInfoView.classList.remove("hidden");
+    }
+
+    function showPromptEvalView() {
+      customPromptModal.setAttribute("aria-labelledby", "customPromptTitle");
+      promptInfoView.classList.add("hidden");
+      promptEvalView.classList.remove("hidden");
+    }
+
+    function normalizeChatCompletionsEndpoint(value) {
+      const raw = String(value || "").trim();
+      if (!raw) {
+        throw new Error("Endpoint URL missing");
+      }
+
+      let url;
+      try {
+        url = new URL(raw);
+      } catch (error) {
+        throw new Error("Endpoint URL is invalid");
+      }
+
+      const isLocalhost = /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(url.hostname);
+      if (url.protocol !== "https:" && !isLocalhost) {
+        throw new Error("Endpoint must use HTTPS or localhost");
+      }
+
+      const path = url.pathname.replace(/\/+$/, "");
+      if (!/\/chat\/completions$/i.test(path)) {
+        url.pathname = `${path}/chat/completions`.replace(/\/{2,}/g, "/");
+      }
+
+      return url.toString();
+    }
+
+    function getApiConfig() {
+      const endpoint = normalizeChatCompletionsEndpoint(apiEndpointInput.value || DEFAULT_API_ENDPOINT);
+      const model = apiModelInput.value.trim();
+      const token = apiTokenInput.value.trim();
+
+      if (!model) {
+        throw new Error("Model name missing");
+      }
+      if (!token) {
+        throw new Error("API token missing");
+      }
+
+      return { endpoint, model, token };
+    }
+
+    async function evaluatePromptWithApi(prompt, signal) {
+      const apiConfig = getApiConfig();
+      let response;
+
+      try {
+        response = await fetch(apiConfig.endpoint, {
+          method: "POST",
+          signal,
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiConfig.token}`
+          },
+          body: JSON.stringify({
+            model: apiConfig.model,
+            messages: [
+              {
+                role: "system",
+                content: LLM_SYSTEM_PROMPT
+              },
+              { role: "user", content: prompt }
+            ],
+            temperature: LLM_TEMPERATURE,
+            max_tokens: 1200
+          })
+        });
+      } catch (error) {
+        if (error?.name === "AbortError") {
+          throw error;
+        }
+        throw new Error("Request failed. Check endpoint, browser access, network, and token.");
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let detail = errorText.trim();
+        try {
+          const parsedError = JSON.parse(errorText);
+          detail = parsedError?.error?.message || parsedError?.message || detail;
+        } catch (error) {
+          // Non-JSON API errors are still useful when kept short.
+        }
+        throw new Error(`API ${response.status}${detail ? `: ${detail.slice(0, 180)}` : ""}`);
+      }
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+      if (typeof content !== "string" || !content.trim()) {
+        throw new Error("LLM response missing message content");
+      }
+      let parsed;
+      try {
+        parsed = JSON.parse(extractJson(content));
+      } catch (error) {
+        throw new Error("LLM returned invalid JSON");
+      }
+      const profile = String(parsed.profile || "").trim();
+      const promptParts = normalizePromptParts(parsed, prompt);
+      const techniquePresence = normalizeTechniquePresence(parsed);
+      return {
+        source: profile ? `Evaluated with ${apiConfig.model}: ${profile.replace(/_/g, " ")}` : `Evaluated with ${apiConfig.model}`,
+        profile,
+        promptParts,
+        techniquePresence
+      };
+    }
+
+    function setModalEvaluating(isEvaluating) {
+      evaluateCustomPromptBtn.disabled = isEvaluating;
+      cancelCustomPromptBtn.disabled = isEvaluating;
+      customPromptDraft.disabled = isEvaluating;
+      apiEndpointInput.disabled = isEvaluating;
+      apiModelInput.disabled = isEvaluating;
+      apiTokenInput.disabled = isEvaluating;
+      showPromptInfoBtn.disabled = isEvaluating;
+      customPromptSpinner.classList.toggle("hidden", !isEvaluating);
+      cancelCustomPromptBtn.textContent = modalHasEvaluation ? "Re-Evaluate" : "Cancel";
+      evaluateCustomPromptLabel.textContent = isEvaluating
+        ? "Evaluating"
+        : modalHasEvaluation ? "Review Revised Prompt" : "Evaluate";
+    }
+
+    function hideTechniqueAudit() {
+      techniqueAudit.classList.add("hidden");
+      techniqueAuditList.innerHTML = "";
+    }
+
+    function renderTechniqueAudit(presence) {
+      techniqueAuditList.innerHTML = techniqueKeys.map((key) => {
+        const present = Boolean(presence[key]);
+        const status = present ? "Present" : "Missing";
+        const rowClass = present ? "present" : "missing";
+        return `
+          <div class="audit-row ${rowClass}" aria-label="${techniqueLabels[key]}: ${status}">
+            <span class="audit-icon" aria-hidden="true"></span>
+            <span>
+              <b>${techniqueLabels[key]}</b>
+              <small>${status}</small>
+            </span>
+          </div>`;
+      }).join("");
+      techniqueAudit.classList.remove("hidden");
+    }
+
+    function shuffledItems(items) {
+      const shuffled = [...items];
+      for (let i = shuffled.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    function startEvaluationPhrases() {
+      const shuffledPhrases = shuffledItems(evaluationPhrases);
+      let phraseIndex = 0;
+      let dotCount = 0;
+      const renderPhrase = () => {
+        customPromptStatus.textContent = `${shuffledPhrases[phraseIndex]}${".".repeat(dotCount)}`;
+      };
+      const tick = () => {
+        dotCount += 1;
+        if (dotCount > 3) {
+          phraseIndex = (phraseIndex + 1) % shuffledPhrases.length;
+          dotCount = 0;
+        }
+        renderPhrase();
+        evaluationPhraseTimer = setTimeout(tick, EVALUATION_DOT_MS);
+      };
+      renderPhrase();
+      evaluationPhraseTimer = setTimeout(tick, EVALUATION_DOT_MS);
+    }
+
+    function stopEvaluationPhrases() {
+      clearTimeout(evaluationPhraseTimer);
+      evaluationPhraseTimer = null;
+    }
+
+    function openCustomPromptModal(prefill = "") {
+      stopEvaluationPhrases();
+      modalHasEvaluation = false;
+      showPromptEvalView();
+      hideTechniqueAudit();
+      setModalEvaluating(false);
+      customPromptDraft.value = prefill;
+      customPromptStatus.textContent = "";
+      apiSettingsStatus.textContent = "Requests are sent from this browser; the endpoint must allow browser access.";
+      customPromptModal.classList.remove("hidden");
+      requestAnimationFrame(() => customPromptDraft.focus());
+    }
+
+    function closeCustomPromptModal() {
+      stopEvaluationPhrases();
+      setModalEvaluating(false);
+      customPromptModal.classList.add("hidden");
+    }
+
+    async function evaluateCustomPromptFromModal() {
+      const prompt = customPromptDraft.value.trim();
+      if (!prompt) {
+        customPromptStatus.textContent = "Enter a prompt to evaluate";
+        customPromptDraft.focus();
+        return;
+      }
+
+      try {
+        getApiConfig();
+      } catch (error) {
+        customPromptStatus.textContent = error?.message || "API settings incomplete";
+        apiSettingsStatus.textContent = "Enter a chat completions endpoint, model name, and API token.";
+        return;
+      }
+
+      setModalEvaluating(true);
+      hideTechniqueAudit();
+      apiSettingsStatus.textContent = "Sending request from this browser.";
+      startEvaluationPhrases();
+
+      let result;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), EVALUATION_TIMEOUT_MS);
+      try {
+        result = await evaluatePromptWithApi(prompt, controller.signal);
+      } catch (error) {
+        stopEvaluationPhrases();
+        setModalEvaluating(false);
+        const timedOut = error?.name === "AbortError";
+        customPromptStatus.textContent = timedOut
+          ? "LLM evaluation timed out. Try again or cancel."
+          : `${error?.message || "LLM evaluation failed"}. Try again or cancel.`;
+        apiSettingsStatus.textContent = timedOut
+          ? "The request timed out."
+          : "Request did not complete; check endpoint access and credentials.";
+        return;
+      } finally {
+        clearTimeout(timeout);
+      }
+
+      stopEvaluationPhrases();
+      modalHasEvaluation = true;
+      activePrompt = makeCustomPromptState(prompt, result.promptParts, allTechniqueStates());
+      customPromptInput.value = activePrompt.original || prompt;
+      setTechniqueStates(activePrompt.selected);
+      samplePromptSelect.value = "custom";
+      previousPromptSelectValue = "custom";
+      evalStatus.textContent = result.source;
+      renderTechniqueAudit(result.techniquePresence);
+      customPromptStatus.textContent = "Revised prompt ready. Dismiss to tune sections on the slide.";
+      apiSettingsStatus.textContent = "Evaluation complete.";
+      setModalEvaluating(false);
+      renderPromptWorkbench();
+    }
+
+    samplePromptSelect.addEventListener("change", () => {
+      const selectedValue = samplePromptSelect.value;
+      if (selectedValue === "custom") {
+        const prefill = activePrompt.key === "custom" ? customPromptInput.value : "";
+        openCustomPromptModal(prefill);
+        return;
+      }
+      previousPromptSelectValue = selectedValue;
+      loadPromptSample(selectedValue);
+    });
+    evaluatePromptBtn.addEventListener("click", () => {
+      const prefill = activePrompt.key === "custom" ? customPromptInput.value : "";
+      samplePromptSelect.value = "custom";
+      openCustomPromptModal(prefill);
+    });
+    cancelCustomPromptBtn.addEventListener("click", () => {
+      if (modalHasEvaluation) {
+        evaluateCustomPromptFromModal();
+        return;
+      }
+      if (!modalHasEvaluation) {
+        samplePromptSelect.value = previousPromptSelectValue;
+      }
+      closeCustomPromptModal();
+    });
+    showPromptInfoBtn.addEventListener("click", showPromptInfoView);
+    backToPromptEvalBtn.addEventListener("click", showPromptEvalView);
+    copySystemPromptBtn.addEventListener("click", async () => {
+      try {
+        await copyText(systemPromptMarkdown());
+        systemPromptStatus.textContent = "Prompt copied.";
+      } catch (error) {
+        systemPromptStatus.textContent = "Copy failed. Select the text and copy manually.";
+      }
+    });
+    downloadPromptSkillBtn.addEventListener("click", () => {
+      downloadTextFile("promptify.md", promptSkillMarkdown());
+      systemPromptStatus.textContent = "Downloaded promptify.md.";
+    });
+    evaluateCustomPromptBtn.addEventListener("click", () => {
+      if (modalHasEvaluation) {
+        closeCustomPromptModal();
+        return;
+      }
+      evaluateCustomPromptFromModal();
+    });
+    getTechniqueInputs().forEach((input) => {
+      input.addEventListener("change", renderPromptWorkbench);
+    });
+
+    createDots();
+    renderMiniFruit();
+    loadPromptSample("patch");
+    setSlide(slideIndexFromHash(), { replaceUrl: true });
+  </script>
+</body>
+</html>
