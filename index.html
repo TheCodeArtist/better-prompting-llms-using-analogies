@@ -964,6 +964,8 @@
       grid-template-columns: minmax(420px, 0.72fr) minmax(680px, 1.28fr);
       gap: clamp(36px, 5vw, 82px);
       align-items: center;
+      --analogy-cycle: 11800ms;
+      --analogy-ease: cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     .embedding-notes {
@@ -975,16 +977,17 @@
     }
 
     .embedding-notes li {
-      border-left: 4px solid var(--blue);
+      border-left: 4px solid var(--green);
       border-radius: 0 8px 8px 0;
       background: rgba(255,255,255,0.76);
       padding: 13px 15px;
       color: #405066;
       line-height: 1.42;
+      transform: translateX(0);
     }
 
     .embedding-notes li:nth-child(2) {
-      border-left-color: var(--green);
+      border-left-color: var(--amber);
     }
 
     .embedding-notes li:nth-child(3) {
@@ -1011,8 +1014,8 @@
       border: 1px solid #dfe6ee;
       border-radius: 8px;
       background:
-        radial-gradient(circle at 74% 39%, rgba(105,65,198,0.08), transparent 18%),
-        radial-gradient(circle at 58% 66%, rgba(210,138,0,0.08), transparent 16%),
+        radial-gradient(circle at 75% 42%, rgba(105,65,198,0.08), transparent 18%),
+        radial-gradient(circle at 58% 68%, rgba(210,138,0,0.08), transparent 16%),
         linear-gradient(90deg, rgba(18,32,51,0.04) 1px, transparent 1px),
         linear-gradient(180deg, rgba(18,32,51,0.04) 1px, transparent 1px),
         #f8fafc;
@@ -1038,36 +1041,21 @@
       stroke: #94a3b8;
       stroke-width: 2;
       marker-end: url(#embeddingAxisHead);
+      opacity: 1;
     }
 
     .embedding-axis.depth {
       display: none;
     }
 
-    .embedding-guide {
-      stroke: rgba(18,32,51,0.28);
-      stroke-width: 2;
-      stroke-dasharray: 5 7;
-      marker-end: none;
-    }
-
-    .vector-shadow {
-      stroke: rgba(10,143,90,0.32);
+    .relation-vector-line {
+      stroke: var(--green);
       stroke-width: 3;
-      marker-end: url(#greenArrowHead);
-      opacity: 0.28;
-      animation: sourceVectorStep 6000ms ease-in-out infinite;
-    }
-
-    .moving-vector-line {
-      stroke: var(--violet);
-      stroke-width: 4;
-      marker-end: url(#violetArrowHead);
-      filter: drop-shadow(0 6px 10px rgba(105,65,198,0.28));
-    }
-
-    .moving-vector {
-      animation: movingVectorPulse 6000ms ease-in-out infinite;
+      stroke-dasharray: 4 4;
+      stroke-dashoffset: 60;
+      marker-end: url(#relationVectorHead);
+      opacity: 0;
+      filter: drop-shadow(0 8px 12px rgba(10,143,90,0.20));
     }
 
     .embedding-point {
@@ -1133,17 +1121,18 @@
 
     .embedding-point.boy .embedding-dot,
     .embedding-point.boy .embedding-label {
-      animation: boyStepGlow 6000ms ease-in-out infinite;
+      box-shadow: 0 7px 18px rgba(18,32,51,0.16);
     }
 
     .embedding-point.girl .embedding-dot,
     .embedding-point.girl .embedding-label {
-      animation: girlStepGlow 6000ms ease-in-out infinite;
+      box-shadow: 0 7px 18px rgba(18,32,51,0.16);
     }
 
     .embedding-point.king .embedding-dot,
     .embedding-point.king .embedding-label {
-      animation: kingStepGlow 6000ms ease-in-out infinite;
+      opacity: 0;
+      box-shadow: 0 7px 18px rgba(18,32,51,0.16);
     }
 
     .embedding-point.queen {
@@ -1151,12 +1140,13 @@
     }
 
     .embedding-point.queen .embedding-dot {
-      animation: queenDotGlow 6000ms ease-in-out infinite;
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.86);
     }
 
     .embedding-point.queen .embedding-label {
       color: #6d2bc1;
-      animation: queenLabelGlow 6000ms ease-in-out infinite;
+      opacity: 0;
     }
 
     .plane-tag {
@@ -1179,17 +1169,17 @@
 
     .plane-tag.vector-source {
       color: var(--green);
-      animation: sourceVectorStep 6000ms ease-in-out infinite;
+      opacity: 0;
     }
 
     .plane-tag.vector-copy {
       color: var(--violet);
-      animation: translatedVectorPulse 6000ms ease-in-out infinite;
+      opacity: 0;
     }
 
     .plane-tag.position-tag {
       color: #d28a00;
-      animation: kingStepGlow 6000ms ease-in-out infinite;
+      opacity: 0;
     }
 
     .traveler {
@@ -1202,8 +1192,8 @@
       border: 3px solid #fff;
       background: var(--amber);
       box-shadow: 0 12px 26px rgba(210,138,0,0.34);
-      transform: translate(-50%, -50%);
-      animation: kingVectorTravel 3600ms ease-in-out infinite;
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.65);
       z-index: 3;
     }
 
@@ -1220,7 +1210,7 @@
       font-weight: 820;
       line-height: 1.15;
       white-space: nowrap;
-      animation: travelerLabelMove 3600ms ease-in-out infinite;
+      opacity: 0;
       z-index: 4;
     }
 
@@ -1246,190 +1236,318 @@
 
     .equation-term.king {
       color: #d28a00;
-      animation: kingStepGlow 6000ms ease-in-out infinite;
+      opacity: 0;
     }
 
     .equation-term.vector {
       color: var(--green);
-      animation: equationVectorGlow 6000ms ease-in-out infinite;
     }
 
     .equation-term.queen {
       color: #6d2bc1;
-      animation: queenGlow 6000ms ease-in-out infinite;
+      opacity: 0;
     }
 
-    @keyframes movingVectorPulse {
+    .slide.active .timeline-running .relation-vector-line {
+      animation: relationVectorStroke var(--analogy-cycle) linear infinite;
+    }
+
+    .slide.active .timeline-running .embedding-point.boy .embedding-dot,
+    .slide.active .timeline-running .embedding-point.boy .embedding-label {
+      animation: boyStepGlow var(--analogy-cycle) linear infinite;
+    }
+
+    .slide.active .timeline-running .embedding-point.girl .embedding-dot,
+    .slide.active .timeline-running .embedding-point.girl .embedding-label {
+      animation: girlStepGlow var(--analogy-cycle) linear infinite;
+    }
+
+    .slide.active .timeline-running .embedding-point.king .embedding-dot,
+    .slide.active .timeline-running .embedding-point.king .embedding-label,
+    .slide.active .timeline-running .equation-term.king {
+      animation: kingRevealGlow var(--analogy-cycle) linear infinite;
+    }
+
+    .slide.active .timeline-running .embedding-point.queen .embedding-dot {
+      animation: queenDotReveal var(--analogy-cycle) linear infinite;
+    }
+
+    .slide.active .timeline-running .embedding-point.queen .embedding-label,
+    .slide.active .timeline-running .equation-term.queen {
+      animation: queenLabelReveal var(--analogy-cycle) linear infinite;
+    }
+
+    .slide.active .timeline-running .plane-tag.vector-source {
+      animation: relationTagGlow var(--analogy-cycle) linear infinite;
+    }
+
+    .slide.active .timeline-running .plane-tag.vector-copy {
+      animation: vectorCopyTagGlow var(--analogy-cycle) linear infinite;
+    }
+
+    .slide.active .timeline-running .plane-tag.position-tag {
+      animation: positionTagGlow var(--analogy-cycle) linear infinite;
+    }
+
+    .slide.active .timeline-running .equation-term.vector {
+      animation: equationVectorGlow var(--analogy-cycle) linear infinite;
+    }
+
+    .slide.active .timeline-running .embedding-notes li:nth-child(1) {
+      animation: relationNoteGlow var(--analogy-cycle) linear infinite;
+    }
+
+    .slide.active .timeline-running .embedding-notes li:nth-child(2) {
+      animation: applyNoteGlow var(--analogy-cycle) linear infinite;
+    }
+
+    .slide.active .timeline-running .embedding-notes li:nth-child(3) {
+      animation: outputNoteGlow var(--analogy-cycle) linear infinite;
+    }
+
+    @keyframes relationVectorStroke {
       0%,
+      6% {
+        stroke: var(--green);
+        opacity: 0;
+        stroke-dashoffset: 60;
+        filter: drop-shadow(0 8px 12px rgba(10,143,90,0.20));
+      }
+      9% {
+        stroke: var(--green);
+        opacity: 1;
+        stroke-dashoffset: 60;
+      }
+      38%,
+      48% {
+        stroke: var(--green);
+        opacity: 1;
+        stroke-dashoffset: 0;
+        filter: drop-shadow(0 8px 12px rgba(10,143,90,0.26));
+      }
+      62%,
+      92% {
+        stroke: var(--violet);
+        opacity: 1;
+        stroke-dashoffset: 0;
+        filter: drop-shadow(0 8px 14px rgba(105,65,198,0.32));
+      }
+      96%,
+      100% {
+        stroke: var(--green);
+        opacity: 0;
+        stroke-dashoffset: 60;
+        filter: none;
+      }
+    }
+
+    @keyframes equationVectorGlow {
+      0%,
+      6%,
+      46%,
+      100% {
+        box-shadow: none;
+        filter: none;
+      }
       12%,
-      100% {
-        opacity: 0.22;
-      }
-      18%,
-      88% {
-        opacity: 1;
+      42% {
+        box-shadow: 0 0 0 4px rgba(10,143,90,0.16), 0 12px 28px rgba(10,143,90,0.20);
+        filter: brightness(1.05);
       }
     }
 
-    @keyframes translatedVectorPulse {
+    @keyframes boyStepGlow {
       0%,
-      48%,
+      5%,
+      42%,
       100% {
-        opacity: 0.22;
+        box-shadow: 0 7px 18px rgba(18,32,51,0.16);
+        filter: none;
       }
-      58%,
-      88% {
-        opacity: 1;
+      7%,
+      38% {
+        box-shadow: 0 0 0 7px rgba(39,110,241,0.16), 0 12px 28px rgba(39,110,241,0.24);
+        filter: brightness(1.06);
       }
     }
 
-    @keyframes sourceVectorStep {
+    @keyframes girlStepGlow {
       0%,
-      10%,
-      44%,
+      13%,
+      46%,
       100% {
-        opacity: 0.32;
-        box-shadow: 0 7px 18px rgba(18,32,51,0.08);
+        box-shadow: 0 7px 18px rgba(18,32,51,0.16);
         filter: none;
       }
       18%,
-      34% {
+      42% {
+        box-shadow: 0 0 0 7px rgba(224,90,163,0.16), 0 12px 28px rgba(224,90,163,0.24);
+        filter: brightness(1.06);
+      }
+    }
+
+    @keyframes kingRevealGlow {
+      0%,
+      44%,
+      96%,
+      100% {
+        opacity: 0;
+        box-shadow: 0 7px 18px rgba(18,32,51,0.16);
+        filter: none;
+      }
+      50%,
+      92% {
+        opacity: 1;
+        box-shadow: 0 7px 18px rgba(18,32,51,0.16);
+        filter: none;
+      }
+      50%,
+      62% {
+        opacity: 1;
+        box-shadow: 0 0 0 7px rgba(210,138,0,0.18), 0 12px 28px rgba(210,138,0,0.26);
+        filter: brightness(1.06);
+      }
+    }
+
+    @keyframes queenDotReveal {
+      0%,
+      70%,
+      100% {
+        opacity: 0;
+        box-shadow: 0 7px 18px rgba(18,32,51,0.18);
+        transform: translate(-50%, -50%) scale(0.86);
+      }
+      76%,
+      92% {
+        opacity: 1;
+        box-shadow: 0 0 0 9px rgba(105,65,198,0.18), 0 12px 28px rgba(105,65,198,0.32);
+        transform: translate(-50%, -50%) scale(1.12);
+      }
+      96% {
+        opacity: 0;
+        box-shadow: 0 7px 18px rgba(18,32,51,0.18);
+        transform: translate(-50%, -50%) scale(0.72);
+      }
+    }
+
+    @keyframes queenLabelReveal {
+      0%,
+      70%,
+      100% {
+        opacity: 0;
+        box-shadow: 0 7px 18px rgba(18,32,51,0.16);
+        filter: none;
+      }
+      76%,
+      92% {
+        opacity: 1;
+        box-shadow: 0 0 0 7px rgba(105,65,198,0.16), 0 12px 28px rgba(105,65,198,0.24);
+        filter: brightness(1.06);
+      }
+      96% {
+        opacity: 0;
+        box-shadow: 0 7px 18px rgba(18,32,51,0.16);
+        filter: none;
+      }
+    }
+
+    @keyframes relationTagGlow {
+      0%,
+      6%,
+      48%,
+      100% {
+        opacity: 0;
+        box-shadow: 0 7px 18px rgba(18,32,51,0.08);
+        filter: none;
+      }
+      12%,
+      44% {
         opacity: 1;
         box-shadow: 0 0 0 4px rgba(10,143,90,0.16), 0 12px 28px rgba(10,143,90,0.20);
         filter: brightness(1.04);
       }
     }
 
-    @keyframes equationVectorGlow {
+    @keyframes vectorCopyTagGlow {
       0%,
-      36% {
-        box-shadow: 0 0 0 4px rgba(10,143,90,0.16), 0 12px 28px rgba(10,143,90,0.20);
-        filter: brightness(1.05);
+      54%,
+      96%,
+      100% {
+        opacity: 0;
+        box-shadow: 0 7px 18px rgba(18,32,51,0.08);
       }
+      62%,
+      92% {
+        opacity: 1;
+        box-shadow: 0 0 0 4px rgba(105,65,198,0.14), 0 12px 28px rgba(105,65,198,0.18);
+      }
+    }
+
+    @keyframes positionTagGlow {
+      0%,
       44%,
+      96%,
       100% {
+        opacity: 0;
+        box-shadow: 0 7px 18px rgba(18,32,51,0.08);
+        filter: none;
+      }
+      50%,
+      64% {
+        opacity: 1;
+        box-shadow: 0 0 0 4px rgba(210,138,0,0.16), 0 12px 28px rgba(210,138,0,0.20);
+        filter: brightness(1.04);
+      }
+    }
+
+    @keyframes relationNoteGlow {
+      0%,
+      6%,
+      48%,
+      100% {
+        background: rgba(255,255,255,0.76);
         box-shadow: none;
-        filter: none;
+        transform: translateX(0);
+      }
+      12%,
+      44% {
+        background: rgba(232,249,240,0.96);
+        box-shadow: 0 0 0 4px rgba(10,143,90,0.10), 0 12px 28px rgba(10,143,90,0.14);
+        transform: translateX(4px);
       }
     }
 
-    @keyframes boyStepGlow {
+    @keyframes applyNoteGlow {
       0%,
-      16% {
-        box-shadow: 0 0 0 7px rgba(39,110,241,0.16), 0 12px 28px rgba(39,110,241,0.24);
-        filter: brightness(1.06);
-      }
-      24%,
+      44%,
+      68%,
       100% {
-        box-shadow: 0 7px 18px rgba(18,32,51,0.16);
-        filter: none;
-      }
-    }
-
-    @keyframes girlStepGlow {
-      0%,
-      14%,
-      40%,
-      100% {
-        box-shadow: 0 7px 18px rgba(18,32,51,0.16);
-        filter: none;
-      }
-      20%,
-      34% {
-        box-shadow: 0 0 0 7px rgba(224,90,163,0.16), 0 12px 28px rgba(224,90,163,0.24);
-        filter: brightness(1.06);
-      }
-    }
-
-    @keyframes kingStepGlow {
-      0%,
-      34%,
-      58%,
-      100% {
-        box-shadow: 0 7px 18px rgba(18,32,51,0.16);
-        filter: none;
-      }
-      42%,
-      52% {
-        box-shadow: 0 0 0 7px rgba(210,138,0,0.18), 0 12px 28px rgba(210,138,0,0.26);
-        filter: brightness(1.06);
-      }
-    }
-
-    @keyframes kingVectorTravel {
-      0%,
-      28% {
-        left: 58%;
-        top: 68%;
-        background: var(--amber);
-      }
-      58%,
-      82% {
-        left: 80%;
-        top: 44%;
-        background: #6d2bc1;
-      }
-      100% {
-        left: 58%;
-        top: 68%;
-        background: var(--amber);
-      }
-    }
-
-    @keyframes travelerLabelMove {
-      0%,
-      28% {
-        left: 58%;
-        top: 68%;
-      }
-      58%,
-      82% {
-        left: 80%;
-        top: 44%;
-      }
-      100% {
-        left: 58%;
-        top: 68%;
-      }
-    }
-
-    @keyframes queenGlow {
-      0%,
-      60%,
-      100% {
+        background: rgba(255,255,255,0.76);
         box-shadow: none;
+        transform: translateX(0);
       }
-      70%,
-      92% {
-        box-shadow: 0 0 0 4px rgba(105,65,198,0.16), 0 12px 28px rgba(105,65,198,0.20);
-      }
-    }
-
-    @keyframes queenDotGlow {
-      0%,
-      60%,
-      100% {
-        box-shadow: 0 7px 18px rgba(18,32,51,0.18);
-        transform: translate(-50%, -50%) scale(1);
-      }
-      70%,
-      92% {
-        box-shadow: 0 0 0 9px rgba(105,65,198,0.18), 0 12px 28px rgba(105,65,198,0.32);
-        transform: translate(-50%, -50%) scale(1.12);
+      50%,
+      64% {
+        background: rgba(255,248,231,0.98);
+        box-shadow: 0 0 0 4px rgba(210,138,0,0.10), 0 12px 28px rgba(210,138,0,0.14);
+        transform: translateX(4px);
       }
     }
 
-    @keyframes queenLabelGlow {
+    @keyframes outputNoteGlow {
       0%,
-      60%,
+      72%,
+      96%,
       100% {
-        box-shadow: 0 7px 18px rgba(18,32,51,0.16);
-        filter: none;
+        background: rgba(255,255,255,0.76);
+        box-shadow: none;
+        transform: translateX(0);
       }
-      70%,
+      78%,
       92% {
-        box-shadow: 0 0 0 7px rgba(105,65,198,0.16), 0 12px 28px rgba(105,65,198,0.24);
-        filter: brightness(1.06);
+        background: rgba(244,239,255,0.98);
+        box-shadow: 0 0 0 4px rgba(105,65,198,0.10), 0 12px 28px rgba(105,65,198,0.14);
+        transform: translateX(4px);
       }
     }
 
@@ -1459,7 +1577,7 @@
 
     .source-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr);
       gap: 8px;
       align-items: center;
     }
@@ -1480,11 +1598,22 @@
       line-height: 1.35;
     }
 
-    .prompt-source textarea[disabled] {
+    .prompt-source textarea[readonly] {
       cursor: default;
       opacity: 1;
       color: #122033;
       -webkit-text-fill-color: #122033;
+    }
+
+    .prompt-source textarea.custom-reopen {
+      cursor: pointer;
+      border-color: rgba(39,110,241,0.42);
+      background: #fff;
+    }
+
+    .prompt-source textarea.custom-reopen:focus {
+      outline: 2px solid rgba(39,110,241,0.28);
+      outline-offset: 2px;
     }
 
     .eval-status {
@@ -2437,40 +2566,33 @@
 
       <article class="slide" data-title="Embedding analogy">
         <div class="slide-inner">
-          <div class="embedding-layout">
+          <div class="embedding-layout" data-analogy-timeline>
             <div>
               <div class="eyebrow">Why analogies work</div>
               <h2>Analogies give LLMs a direction.</h2>
               <p class="lead">In embedding space,<br>meaning is encoded as position.<br>A good analogy gives the model<br>a transformation to reuse.</p>
               <ul class="embedding-notes">
-                <li><b>Position:</b> start from the meaning of <strong>king</strong>.</li>
-                <li><b>Vector:</b> reuse the relation <strong>boy -> girl</strong>.</li>
-                <li><b>Output:</b> move through that relation and land near <strong>queen</strong>.</li>
+                <li><b>Relationship:</b> read the direction from <strong>boy</strong> to <strong>girl</strong>.</li>
+                <li><b>Apply:</b> shift that same direction onto <strong>king</strong>.</li>
+                <li><b>Result:</b> the shifted direction lands at <strong>queen</strong>.</li>
               </ul>
             </div>
             <div class="embedding-demo">
               <div class="embedding-plane" aria-label="Vector analogy showing king plus boy to girl equals queen">
                 <svg class="embedding-arrows" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                   <defs>
-                    <marker id="embeddingAxisHead" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto">
-                      <path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8"></path>
+                    <marker id="embeddingAxisHead" markerWidth="6" markerHeight="6" refX="5.2" refY="3" orient="auto">
+                      <path d="M0,0 L6,3 L0,6 Z" fill="#94a3b8"></path>
                     </marker>
-                    <marker id="greenArrowHead" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto">
-                      <path d="M0,0 L8,4 L0,8 Z" fill="#0a8f5a"></path>
-                    </marker>
-                    <marker id="violetArrowHead" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto">
-                      <path d="M0,0 L8,4 L0,8 Z" fill="#6941c6"></path>
+                    <marker id="relationVectorHead" markerWidth="4.5" markerHeight="4.5" refX="4.1" refY="2.25" orient="auto">
+                      <path d="M0,0 L4.5,2.25 L0,4.5 Z" fill="context-stroke"></path>
                     </marker>
                   </defs>
                   <line class="embedding-axis" x1="8" y1="80" x2="92" y2="80"></line>
                   <line class="embedding-axis" x1="50" y1="88" x2="50" y2="12"></line>
-                  <line class="embedding-guide" x1="18" y1="68" x2="58" y2="68"></line>
-                  <line class="embedding-guide" x1="35" y1="42" x2="75" y2="42"></line>
-                  <line class="vector-shadow" x1="18" y1="68" x2="35" y2="42"></line>
-                  <g class="moving-vector">
-                    <line class="moving-vector-line" x1="18" y1="68" x2="35" y2="42"></line>
-                    <animateTransform attributeName="transform" type="translate" values="0 0;0 0;40 0;40 0;0 0" keyTimes="0;0.36;0.60;0.88;1" dur="6s" repeatCount="indefinite"></animateTransform>
-                  </g>
+                  <line class="relation-vector-line" x1="19.1" y1="66.3" x2="33.9" y2="43.7">
+                    <animateTransform attributeName="transform" type="translate" values="0 0;0 0;40 0;40 0;0 0" keyTimes="0;0.48;0.62;0.92;1" dur="11.8s" repeatCount="indefinite"></animateTransform>
+                  </line>
                 </svg>
                 <div class="embedding-point boy" style="--x:18%; --y:68%; --dot-color:#276ef1;">
                   <span class="embedding-dot"></span>
@@ -2488,16 +2610,14 @@
                   <span class="embedding-dot"></span>
                   <span class="embedding-label right">queen</span>
                 </div>
-                <div class="plane-tag vector-source" style="--x:21%; --y:48%;">vector: boy -> girl</div>
+                <div class="plane-tag vector-source" style="--x:22%; --y:50%;">vector: boy -> girl</div>
                 <div class="plane-tag position-tag" style="--x:68%; --y:66%;">position: king</div>
-                <div class="plane-tag vector-copy" style="--x:66%; --y:52%;">same vector, shifted</div>
+                <div class="plane-tag vector-copy" style="--x:68%; --y:52%;">same vector, moved</div>
               </div>
               <div class="embedding-equation" aria-label="boy to girl vector plus king equals queen">
                 <span class="equation-term vector">boy -> girl</span>
-                <span>+</span>
-                <span class="equation-term king">king</span>
-                <span>=</span>
-                <span class="equation-term queen">queen</span>
+                <span class="equation-term king">+ king</span>
+                <span class="equation-term queen">= queen</span>
               </div>
             </div>
           </div>
@@ -2520,9 +2640,8 @@
                     <option value="risk">Weekly risk brief</option>
                     <option value="custom">Custom prompt</option>
                   </select>
-                  <button class="btn" id="evaluatePrompt" type="button">Evaluate</button>
                 </div>
-                <textarea id="customPromptInput" placeholder="Current prompt" disabled aria-readonly="true"></textarea>
+                <textarea id="customPromptInput" placeholder="Current prompt" readonly aria-readonly="true"></textarea>
                 <div class="eval-status" id="evalStatus"></div>
               </div>
               <label class="check-row">
@@ -2726,15 +2845,28 @@
       }
     }
 
+    function restartEmbeddingAnalogy(slide) {
+      const timeline = slide.querySelector("[data-analogy-timeline]");
+      if (!timeline) return;
+      timeline.classList.remove("timeline-running");
+      void timeline.offsetWidth;
+      timeline.classList.add("timeline-running");
+      timeline.querySelectorAll("animate, animateTransform").forEach((animation) => {
+        animation.beginElement?.();
+      });
+    }
+
     function setSlide(index, options = {}) {
       const { updateUrl = true, replaceUrl = false } = options;
       const bounded = Math.max(0, Math.min(slideEls.length - 1, index));
       if (activeGame && bounded !== currentSlide) {
         activeGame.pauseForSlideChange();
       }
+      slideEls[currentSlide].querySelector("[data-analogy-timeline]")?.classList.remove("timeline-running");
       slideEls[currentSlide].classList.remove("active");
       currentSlide = bounded;
       slideEls[currentSlide].classList.add("active");
+      restartEmbeddingAnalogy(slideEls[currentSlide]);
       progressEl.style.width = `${((currentSlide + 1) / slideEls.length) * 100}%`;
       slideCountEl.textContent = `${currentSlide + 1} / ${slideEls.length}`;
       prevSlideBtn.disabled = currentSlide === 0;
@@ -3470,7 +3602,6 @@ Keep the complete composed prompt under 180 words.`;
     const riskText = document.getElementById("riskText");
     const samplePromptSelect = document.getElementById("samplePromptSelect");
     const customPromptInput = document.getElementById("customPromptInput");
-    const evaluatePromptBtn = document.getElementById("evaluatePrompt");
     const evalStatus = document.getElementById("evalStatus");
     const customPromptModal = document.getElementById("customPromptModal");
     const customPromptDraft = document.getElementById("customPromptDraft");
@@ -3744,11 +3875,26 @@ Keep the complete composed prompt under 180 words.`;
       riskText.textContent = risk < 35 ? "Low" : risk < 65 ? "Medium" : "High";
     }
 
+    function syncCustomPromptPreviewState() {
+      const isCustom = activePrompt.key === "custom";
+      customPromptInput.classList.toggle("custom-reopen", isCustom);
+      customPromptInput.tabIndex = isCustom ? 0 : -1;
+      customPromptInput.setAttribute("aria-label", isCustom ? "Edit custom prompt" : "Current prompt");
+      if (isCustom) {
+        customPromptInput.setAttribute("aria-haspopup", "dialog");
+        customPromptInput.title = "Edit custom prompt";
+      } else {
+        customPromptInput.removeAttribute("aria-haspopup");
+        customPromptInput.removeAttribute("title");
+      }
+    }
+
     function loadPromptSample(key) {
       activePrompt = key === "custom" ? makeCustomPromptState(customPromptInput.value.trim()) : makePromptState(key);
       customPromptInput.value = activePrompt.original || activePrompt.base;
       setTechniqueStates(activePrompt.selected);
       evalStatus.textContent = "";
+      syncCustomPromptPreviewState();
       renderPromptWorkbench();
     }
 
@@ -4051,7 +4197,7 @@ Keep the complete composed prompt under 180 words.`;
       cancelCustomPromptBtn.textContent = modalHasEvaluation ? "Re-Evaluate" : "Cancel";
       evaluateCustomPromptLabel.textContent = isEvaluating
         ? "Evaluating"
-        : modalHasEvaluation ? "Review Revised Prompt" : "Evaluate";
+        : modalHasEvaluation ? "Use Revised Prompt" : "Evaluate";
     }
 
     function hideTechniqueAudit() {
@@ -4182,6 +4328,7 @@ Keep the complete composed prompt under 180 words.`;
       customPromptStatus.textContent = "Revised prompt ready. Dismiss to tune sections on the slide.";
       apiSettingsStatus.textContent = "Evaluation complete.";
       setModalEvaluating(false);
+      syncCustomPromptPreviewState();
       renderPromptWorkbench();
     }
 
@@ -4195,10 +4342,14 @@ Keep the complete composed prompt under 180 words.`;
       previousPromptSelectValue = selectedValue;
       loadPromptSample(selectedValue);
     });
-    evaluatePromptBtn.addEventListener("click", () => {
-      const prefill = activePrompt.key === "custom" ? customPromptInput.value : "";
-      samplePromptSelect.value = "custom";
-      openCustomPromptModal(prefill);
+    customPromptInput.addEventListener("click", () => {
+      if (activePrompt.key !== "custom") return;
+      openCustomPromptModal(customPromptInput.value.trim());
+    });
+    customPromptInput.addEventListener("keydown", (event) => {
+      if (activePrompt.key !== "custom" || !["Enter", " "].includes(event.key)) return;
+      event.preventDefault();
+      openCustomPromptModal(customPromptInput.value.trim());
     });
     cancelCustomPromptBtn.addEventListener("click", () => {
       if (modalHasEvaluation) {
